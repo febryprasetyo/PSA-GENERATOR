@@ -5,7 +5,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
-RUN corepack enable pnpm && pnpm i --frozen-lockfile
+RUN corepack enable pnpm && pnpm config set store-dir .pnpm-store && pnpm config set onlyBuiltDependencies "[\"esbuild\"]" && pnpm i --frozen-lockfile
 
 # 2. Rebuild the source code only when needed
 FROM base AS builder
