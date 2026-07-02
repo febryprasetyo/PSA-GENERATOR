@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg17
+    container_name: psa_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${USERNAME_DB:-postgres}
+      POSTGRES_PASSWORD: ${PASSWORD_DB}
+      POSTGRES_DB: ${POSTGRES_DB:-psa_db}
+      TZ: Asia/Jakarta
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - psa_db_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USERNAME_DB:-postgres} -d ${POSTGRES_DB:-psa_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: psa_redis
+    restart: unless-stopped
+
+    command: 
+      redis-server 
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD}
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - psa_redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  psa_db_data:
+  psa_redis_data:
