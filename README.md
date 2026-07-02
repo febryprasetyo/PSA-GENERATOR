@@ -86,7 +86,7 @@ To start the background MQTT listener for data ingestion (if running as a separa
 pnpm run mqtt
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
+Open [http://localhost:3300](http://localhost:3300) in your browser to view the application.
 
 ---
 

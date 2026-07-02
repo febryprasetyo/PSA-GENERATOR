@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3300",
     "build": "next build",
     "lint": "eslint .",
-    "start": "next start",
+    "start": "next start -p 3300",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:push": "drizzle-kit push",
@@ -54,5 +54,10 @@
     "tsx": "^4.22.4",
     "typescript": "^5.7.2",
     "vitest": "^1.6.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

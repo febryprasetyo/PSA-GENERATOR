@@ -40,7 +40,7 @@ services:
     container_name: psa_dashboard
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3300:3300"
     depends_on:
       db:
         condition: service_healthy

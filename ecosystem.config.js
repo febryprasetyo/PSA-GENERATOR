@@ -6,6 +6,7 @@ module.exports = {
       args: "start",
       env: {
         NODE_ENV: "production",
+        PORT: 3300,
       },
       log_date_format: "YYYY-MM-DD HH:mm Z",
     },
