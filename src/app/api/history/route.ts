@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Status constraint (based on the machine's current status, or reading status? History is just readings. Let's filter on machine's current status if requested)
     if (statusFilter !== "all") {
-      conditions.push(eq(machines.status, statusFilter));
+      conditions.push(eq(machines.status, statusFilter as "online" | "offline" | "warning"));
     }
 
     // Don't show deleted machines

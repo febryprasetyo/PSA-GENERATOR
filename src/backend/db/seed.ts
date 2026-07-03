@@ -8,7 +8,8 @@ async function main() {
   try {
     const { db } = await import("./index");
     const { users: usersTable, masterHospitals } = await import("./schema");
-    const rsData = require("./rs_data.json");
+    const rsDataModule = await import("./rs_data.json", { assert: { type: "json" } });
+    const rsData = rsDataModule.default;
 
     const saltRounds = 10;
     const defaultPassword = process.env.DEMO_PASSWORD;
@@ -18,7 +19,7 @@ async function main() {
       {
         id: "U-ADMIN",
         name: "Admin Utama",
-        username: process.env.DEMO_ADMIN,
+        username: process.env.DEMO_ADMIN || "admin",
         role: "admin" as const,
         status: "active" as const,
         passwordHash,
@@ -26,7 +27,7 @@ async function main() {
       {
         id: "U-OPERATOR",
         name: "Operator",
-        username: process.env.DEMO_OPERATOR,
+        username: process.env.DEMO_OPERATOR || "operator",
         role: "operator" as const,
         status: "active" as const,
         passwordHash,
@@ -34,7 +35,7 @@ async function main() {
       {
         id: "U-CLIENT1",
         name: "Client RS Demo",
-        username: process.env.DEMO_CLIENT,
+        username: process.env.DEMO_CLIENT || "client",
         role: "client" as const,
         status: "active" as const,
         clientId: "RS-001",
@@ -43,7 +44,7 @@ async function main() {
       {
         id: "U-VIEWER1",
         name: "TV Monitor",
-        username: process.env.DEMO_VIEWER,
+        username: process.env.DEMO_VIEWER || "viewer",
         role: "viewer" as const,
         status: "active" as const,
         passwordHash,

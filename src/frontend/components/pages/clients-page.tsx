@@ -111,8 +111,8 @@ export function ClientsPage() {
         return;
       }
       fetchClients();
-    } catch (err: any) {
-      alert(err.message || "Terjadi kesalahan");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Terjadi kesalahan");
     }
   }
 

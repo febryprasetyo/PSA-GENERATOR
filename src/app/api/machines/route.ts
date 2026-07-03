@@ -100,9 +100,9 @@ export async function POST(request: Request) {
     }).returning();
 
     return NextResponse.json({ success: true, machine: newMachine }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST Machine Error:", error);
-    if (error.code === '23505') { 
+    if (typeof error === 'object' && error !== null && 'code' in error && (error as Record<string, unknown>).code === '23505') { 
       return NextResponse.json({ error: "Serial number already exists" }, { status: 409 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

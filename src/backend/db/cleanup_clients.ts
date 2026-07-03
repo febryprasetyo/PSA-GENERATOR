@@ -1,9 +1,5 @@
-// @ts-nocheck
 import * as dotenv from "dotenv";
 dotenv.config({ path: ".env" });
-if (!global.crypto) {
-  global.crypto = require("crypto");
-}
 import { sql } from "drizzle-orm";
 
 async function alter() {

@@ -10,9 +10,10 @@ import { StationsTable, rowsPerPageOptions } from "@/frontend/components/dashboa
 import { getDashboardSummary, getFilteredStations, getOxygenQualityIssues, getOxygenQualitySummary, getStatusChart } from "@/frontend/lib/dashboard-analytics";
 import { enrichStation } from "@/frontend/lib/metrics";
 import type { HealthFilter, SortKey, SortDirection, StatusFilter } from "@/frontend/lib/dashboard-types";
+import type { StationWithMetrics } from "@/frontend/lib/types";
 
 export function ViewerDashboard() {
-  const [stations, setStations] = useState<any[]>([]);
+  const [stations, setStations] = useState<StationWithMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -24,7 +25,7 @@ export function ViewerDashboard() {
         .then(res => res.json())
         .then(data => {
           if (data.machines && isMounted) {
-            const assignedStations = data.machines.filter((m: any) => m.hospitalName !== "Not Assigned");
+            const assignedStations = data.machines.filter((m: Record<string, unknown>) => m.hospitalName !== "Not Assigned");
             setStations(assignedStations);
             setErrorMsg(null);
           } else if (data.error && isMounted) {
@@ -33,7 +34,7 @@ export function ViewerDashboard() {
         })
         .catch(err => {
           console.error(err);
-          if (isMounted) setErrorMsg(err.message);
+          if (isMounted) setErrorMsg(err instanceof Error ? err.message : "Terjadi kesalahan");
         })
         .finally(() => {
           if (isMounted) setIsLoading(false);

@@ -12,8 +12,8 @@ export default function DatabasePage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
 
-  const [data, setData] = useState<any>(null);
-  const [error, setError] = useState<any>(null);
+  const [data, setData] = useState<{ entries: Record<string, string | number>[]; total: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [timeRange, setTimeRange] = useState<string>("all");
@@ -247,7 +247,7 @@ export default function DatabasePage() {
                       </td>
                     </tr>
                   )}
-                  {entries.map((entry: any, idx: number) => (
+                  {entries.map((entry: Record<string, string | number>, idx: number) => (
                     <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4 font-semibold text-dashboard-text">{(page - 1) * limit + idx + 1}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.stationName} <span className="block text-xs text-dashboard-muted">{entry.stationId}</span></td>

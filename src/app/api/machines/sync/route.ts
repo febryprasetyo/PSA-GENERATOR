@@ -43,7 +43,9 @@ export async function POST(request: Request) {
             deletedAt: null, 
             pendingDelete: false, 
             status: "online", 
-            lastSeenAt: new Date() 
+            lastSeenAt: new Date(),
+            clientId: null,
+            machineName: `Auto-Synced (${serialNumber})`
           })
           .where(eq(machines.id, existing[0].id));
         syncedCount++;

@@ -57,11 +57,11 @@ async function startListener() {
       if (!serialNumber) return; // ignore empty
 
       const payloadStr = message.toString();
-      let payload: any = {};
+      let payload: Record<string, unknown> = {};
       
       try {
         payload = JSON.parse(payloadStr);
-      } catch (e) {
+      } catch {
         console.warn(`[MQTT] Invalid JSON payload from ${serialNumber}:`, payloadStr);
         return;
       }
@@ -70,6 +70,7 @@ async function startListener() {
 
       // 1. Check if machine exists, if not, auto-register
       let machineId = null;
+      let clientId = null;
       
       const existingMachines = await db.select().from(machines).where(eq(machines.serialNumber, serialNumber)).limit(1);
       
@@ -84,6 +85,7 @@ async function startListener() {
         machineId = newMachine.id;
       } else {
         machineId = existingMachines[0].id;
+        clientId = existingMachines[0].clientId;
         // Update status and lastSeenAt
         await db.update(machines)
           .set({ 
@@ -104,13 +106,14 @@ async function startListener() {
         return null;
       };
 
-      const terminalTime = payload._terminalTime ? new Date(payload._terminalTime) : new Date();
+      const terminalTime = payload._terminalTime ? new Date(payload._terminalTime as string | number) : new Date();
 
       const readingData = {
         machineId,
+        clientId,
         serialNumber,
         terminalTime: terminalTime,
-        groupName: payload._groupName || null,
+        groupName: (payload._groupName as string) || null,
         oxygenPurity: getVal(['Schneider_PLC_OXYGEN_PURITY', 'Siemens_S7_200CN_SMART_1_O2Purity']),
         tankPressure: getVal(['Schneider_PLC_MF350_RESULT_O2_TANK', 'Siemens_S7_200CN_SMART_1_O2Tank']),
         flowSentral: getVal(['Schneider_PLC_FLOW_METER', 'Siemens_S7_200CN_SMART_1_Flow1']),
@@ -124,7 +127,7 @@ async function startListener() {
       // 2b. Determine start of day total flow
       const todayDateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD in UTC
       let startOfDayTotalFlow = readingData.totalFlow;
-      let startOfDayDate = todayDateStr;
+      const startOfDayDate = todayDateStr;
 
       try {
         const latestDbRecord = await db.select().from(machineLatestReadings).where(eq(machineLatestReadings.machineId, machineId as string)).limit(1);
@@ -139,7 +142,9 @@ async function startListener() {
         console.error("[MQTT] Error fetching latest reading for startOfDay logic:", err);
       }
 
-      await db.insert(machineReadings).values(readingData);
+      if (clientId) {
+        await db.insert(machineReadings).values(readingData);
+      }
 
       const latestDataForUpsert = {
         ...readingData,

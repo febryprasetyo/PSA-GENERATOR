@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { verifyToken, signToken } from '@/backend/auth/jwt';
+import { signToken, verifyToken, type SessionPayload } from '../auth/jwt';
 import { SignJWT } from 'jose';
 
 // Create a simple JWT test
@@ -20,7 +20,7 @@ describe('Auth Utility - JWT', () => {
     };
 
     // Create token
-    const token = await signToken(payload as any);
+    const token = await signToken(payload as unknown as SessionPayload);
     expect(token).toBeDefined();
     expect(typeof token).toBe('string');
 
@@ -38,6 +38,6 @@ describe('Auth Utility - JWT', () => {
 
   it('should throw an error if JWT_SECRET is missing', async () => {
     vi.stubEnv('JWT_SECRET', '');
-    await expect(signToken({ id: '1', username: 'test', role: 'client', name: 'Test' } as any)).rejects.toThrow("JWT_SECRET environment variable is not set");
+    await expect(signToken({ id: '1', username: 'test', role: 'client', name: 'Test' } as unknown as SessionPayload)).rejects.toThrow("JWT_SECRET environment variable is not set");
   });
 });

@@ -18,7 +18,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json();
     const { hospitalName, province, city, address, owner, kelas } = body;
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (hospitalName !== undefined) updateData.hospitalName = hospitalName;
     if (province !== undefined) updateData.province = province;
     if (city !== undefined) updateData.city = city;

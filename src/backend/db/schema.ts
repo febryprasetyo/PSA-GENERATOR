@@ -67,6 +67,7 @@ export const machineThresholds = pgTable('machine_thresholds', {
 export const machineReadings = pgTable('machine_readings', {
   id: text('id').primaryKey().$defaultFn(() => randomUUID()),
   machineId: text('machine_id').references(() => machines.id).notNull(),
+  clientId: text('client_id').references(() => masterHospitals.id),
   serialNumber: varchar('serial_number', { length: 255 }).notNull(),
   terminalTime: timestamp('terminal_time', { withTimezone: true }).notNull(),
   receivedAt: timestamp('received_at', { withTimezone: true }).defaultNow().notNull(),
@@ -84,6 +85,7 @@ export const machineReadings = pgTable('machine_readings', {
 
 export const machineLatestReadings = pgTable('machine_latest_readings', {
   machineId: text('machine_id').primaryKey().references(() => machines.id),
+  clientId: text('client_id').references(() => masterHospitals.id),
   serialNumber: varchar('serial_number', { length: 255 }).notNull(),
   terminalTime: timestamp('terminal_time', { withTimezone: true }).notNull(),
   receivedAt: timestamp('received_at', { withTimezone: true }).defaultNow().notNull(),

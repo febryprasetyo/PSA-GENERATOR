@@ -29,7 +29,7 @@ export async function GET() {
     .leftJoin(masterHospitals, eq(users.clientId, masterHospitals.id));
 
     if (auth.payload?.role === "operator") {
-      query = query.where(eq(users.role, "client")) as any;
+      query = query.where(eq(users.role, "client")) as typeof query;
     }
 
     const allUsers = await query;
@@ -50,7 +50,8 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    let { name, username, password, role, clientId } = body;
+    const { name, username, password, clientId } = body;
+    let { role } = body;
 
     // Operator can only create client users
     if (auth.payload?.role === "operator") {
@@ -80,9 +81,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, user: newUser }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST User Error:", error);
-    if (error.code === '23505') { 
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') { 
       return NextResponse.json({ error: "Username already exists" }, { status: 409 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

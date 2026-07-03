@@ -21,13 +21,14 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    let { name, username, password, role, status, clientId } = body;
+    const { name, username, password, status, clientId } = body;
+    let { role } = body;
 
     if (auth.payload?.role === "operator") {
       role = "client"; // operators cannot change role to anything else
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (name) updateData.name = name;
     if (username) updateData.username = username;
     if (role) {
@@ -54,7 +55,7 @@ export async function PUT(
     // if operator, they can only update client users
     let conditions = eq(users.id, id);
     if (auth.payload?.role === "operator") {
-      conditions = and(conditions, eq(users.role, "client")) as any;
+      conditions = and(conditions, eq(users.role, "client")) as typeof conditions;
     }
 
     const [updatedUser] = await db.update(users)
@@ -73,9 +74,9 @@ export async function PUT(
     }
 
     return NextResponse.json({ success: true, user: updatedUser });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PUT User Error:", error);
-    if (error.code === '23505') { 
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') { 
       return NextResponse.json({ error: "Username already exists" }, { status: 409 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -104,7 +105,7 @@ export async function DELETE(
   try {
     let conditions = eq(users.id, id);
     if (auth.payload?.role === "operator") {
-      conditions = and(conditions, eq(users.role, "client")) as any;
+      conditions = and(conditions, eq(users.role, "client")) as typeof conditions;
     }
 
     const [deletedUser] = await db.delete(users).where(conditions).returning({ id: users.id });

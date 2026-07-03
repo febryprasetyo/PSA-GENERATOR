@@ -21,9 +21,10 @@ import type { HealthFilter, SortKey, SortDirection, StatusFilter } from "@/front
 import { enrichStation } from "@/frontend/lib/metrics";
 import { dashboardRoleProfiles } from "@/frontend/lib/role-profiles";
 import type { UserRole } from "@/shared/types";
+import type { StationWithMetrics } from "@/frontend/lib/types";
 
 export function Dashboard() {
-  const [stations, setStations] = useState<any[]>([]);
+  const [stations, setStations] = useState<StationWithMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -34,7 +35,7 @@ export function Dashboard() {
         .then(res => res.json())
         .then(data => {
           if (data.machines && isMounted) {
-            const assignedStations = data.machines.filter((m: any) => m.hospitalName !== "Not Assigned");
+            const assignedStations = data.machines.filter((m: StationWithMetrics) => m.hospitalName !== "Not Assigned");
             setStations(assignedStations);
           }
         })

@@ -1,6 +1,6 @@
 import { parsePsaTopic } from "@/backend/mqtt/parsePsaTopic";
 
-export function transformMqttPayload(topic: string, payload: Record<string, any>) {
+export function transformMqttPayload(topic: string, payload: Record<string, unknown>) {
   const serialNumber = parsePsaTopic(topic);
   if (!serialNumber) {
     throw new Error("Invalid topic");
@@ -18,8 +18,8 @@ export function transformMqttPayload(topic: string, payload: Record<string, any>
 
   return {
     serialNumber,
-    terminalTime: payload._terminalTime ? new Date(payload._terminalTime) : new Date(),
-    groupName: payload._groupName || null,
+    terminalTime: payload._terminalTime ? new Date(payload._terminalTime as string | number) : new Date(),
+    groupName: (payload._groupName as string) || null,
     oxygenPurity: getVal(['Schneider_PLC_OXYGEN_PURITY', 'Siemens_S7_200CN_SMART_1_O2Purity']),
     tankPressure: getVal(['Schneider_PLC_MF350_RESULT_O2_TANK', 'Siemens_S7_200CN_SMART_1_O2Tank']),
     flowSentral: getVal(['Schneider_PLC_FLOW_METER', 'Siemens_S7_200CN_SMART_1_Flow1']),

@@ -180,7 +180,7 @@ function StationRow({ station }: { station: StationWithMetrics }) {
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-dashboard-text">{station.hospitalName}</p>
             <p className="mt-1 text-xs text-dashboard-muted">
-              {station.id} | {station.region || ""} | {station.machineCount} mesin | {station.runningTimeHours ? formatNumber(station.runningTimeHours) : 0} jam | Sync: {new Date(station.lastUpdate).toLocaleTimeString("id-ID")}
+              {station.id} | {station.region} | {station.machineCount} mesin | {station.runningTimeHours ? formatNumber(station.runningTimeHours) : 0} jam | Sync: {new Date(station.lastUpdate).toLocaleTimeString("id-ID")}
             </p>
           </div>
         </div>

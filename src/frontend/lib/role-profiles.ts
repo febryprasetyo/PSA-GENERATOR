@@ -28,4 +28,10 @@ export const dashboardRoleProfiles: Record<UserRole, DashboardRoleProfile> = {
     className: "border-slate-200 bg-slate-100 text-slate-700",
     icon: Eye,
   },
+  viewer: {
+    label: "Viewer",
+    summary: "Monitor layar besar",
+    className: "border-purple-200 bg-purple-100 text-purple-700",
+    icon: Eye,
+  },
 };

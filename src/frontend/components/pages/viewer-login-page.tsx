@@ -27,8 +27,8 @@ export default function ViewerLoginPage() {
 
     try {
       await login("viewer", passVal, appRoutes.viewer);
-    } catch (err: any) {
-      setError(err.message || "Gagal masuk. Periksa kembali kata sandi.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali kata sandi.");
     }
   }
 

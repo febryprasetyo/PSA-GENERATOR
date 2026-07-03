@@ -51,7 +51,7 @@ export function UserModal({ isOpen, onClose, onSave, user }: UserModalProps) {
     setIsSaving(true);
     
     try {
-      const payload: any = { name, username, role, status };
+      const payload: Record<string, unknown> = { name, username, role, status };
       if (role === "client") {
         if (!clientId) {
           setError("Silakan pilih Rumah Sakit untuk role Client");
@@ -66,8 +66,8 @@ export function UserModal({ isOpen, onClose, onSave, user }: UserModalProps) {
 
       await onSave(payload);
       onClose();
-    } catch (err: any) {
-      setError(err.message || "Failed to save user");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setIsSaving(false);
     }

@@ -23,7 +23,7 @@ export async function PUT(
     const body = await request.json();
     const { clientId, machineName, model, capacityMcDay, capacityMcMonth, serialNumber } = body;
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (clientId !== undefined) updateData.clientId = clientId || null;
     if (machineName) updateData.machineName = machineName;
     if (model !== undefined) updateData.model = model;
@@ -49,7 +49,7 @@ export async function PUT(
     }
 
     return NextResponse.json({ success: true, machine: updatedMachine });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PUT Machine Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -71,7 +71,7 @@ export async function DELETE(
   if (!id) return NextResponse.json({ error: "Machine ID is required" }, { status: 400 });
 
   try {
-    let updateData: any = {};
+    let updateData: Record<string, unknown> = {};
     if (auth.payload?.role === "operator") {
       updateData = { pendingDelete: true };
     } else {

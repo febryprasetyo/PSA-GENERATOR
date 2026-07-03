@@ -30,8 +30,8 @@ export default function LoginPage() {
 
     try {
       await login(userVal, passVal);
-    } catch (err: any) {
-      setError(err.message || "Gagal masuk. Periksa kembali username dan sandi.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali username dan sandi.");
     }
   }
 

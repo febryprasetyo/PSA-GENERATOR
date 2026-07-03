@@ -47,5 +47,7 @@ export const stations: Station[] = Array.from({ length: 124 }, (_, index) => {
     status,
     lastUpdate: `${minutesAgo === 0 ? 1 : minutesAgo} menit lalu`,
     region: regions[index % regions.length],
+    totalFlow: 0,
+    runningTimeHours: 0,
   };
 });

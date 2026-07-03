@@ -13,10 +13,12 @@ export async function GET() {
     const userRole = auth.payload?.role;
     const userClientId = auth.payload?.clientId;
 
-    let baseQuery = db.select({
+    const baseQuery = db.select({
       id: machines.serialNumber, // Map serialNumber to id for frontend compatibility
       serialNumber: machines.serialNumber,
       hospitalName: masterHospitals.hospitalName,
+      province: masterHospitals.province,
+      city: masterHospitals.city,
       capacityMcDay: machines.capacityMcDay,
       capacityMcMonth: machines.capacityMcMonth,
       status: machines.status, // "offline" etc.
@@ -45,16 +47,50 @@ export async function GET() {
       allMachines = await baseQuery.where(isNull(machines.deletedAt));
     }
 
+    interface DashboardMachine {
+      serialNumber: string;
+      hospitalName?: string | null;
+      province?: string | null;
+      city?: string | null;
+      capacityMcDay?: string | null;
+      capacityMcMonth?: string | null;
+      status: string;
+      dbOxygenPurity?: string | null;
+      dbTankPressure?: string | null;
+      dbFlowSentral?: string | null;
+      dbFlowBooster?: string | null;
+      dbTotalFlow?: string | null;
+      dbStartOfDayTotalFlow?: string | null;
+      dbRunningTimeHours?: string | null;
+      dbTerminalTime?: string | Date | null;
+      lastSeenAt?: string | Date | null;
+      [key: string]: unknown;
+    }
+
+    interface LatestData {
+      receivedAt?: string;
+      updatedAt?: string;
+      terminalTime?: string;
+      oxygenPurity?: string;
+      tankPressure?: string;
+      flowSentral?: string;
+      flowBooster?: string;
+      totalFlow?: string;
+      startOfDayTotalFlow?: string;
+      runningTimeHours?: string;
+      [key: string]: unknown;
+    }
+
     // Fetch latest data from Redis
-    const formattedMachines = await Promise.all(allMachines.map(async (m: any) => {
+    const formattedMachines = await Promise.all(allMachines.map(async (m: DashboardMachine) => {
       const redisKey = `psa:machine:latest:${m.serialNumber}`;
       const latestDataStr = await redis.get(redisKey);
-      let latestData: any = {};
+      let latestData: LatestData = {};
       
       if (latestDataStr) {
         try {
           latestData = JSON.parse(latestDataStr);
-        } catch (e) {
+        } catch {
           console.error("Failed to parse redis data for", m.serialNumber);
         }
       }
@@ -65,29 +101,31 @@ export async function GET() {
       const machineData = {
         id: m.serialNumber,
         hospitalName: m.hospitalName || "Not Assigned",
-        capacityMcDay: m.capacityMcDay ? parseFloat(m.capacityMcDay) : 0,
-        capacityMcMonth: m.capacityMcMonth ? parseFloat(m.capacityMcMonth) : 0,
+        region: m.province ? (m.city ? `${m.city}, ${m.province}` : m.province) : (m.city || "Unknown Region"),
+        capacityMcDay: m.capacityMcDay ? parseFloat(m.capacityMcDay as string) : 0,
+        capacityMcMonth: m.capacityMcMonth ? parseFloat(m.capacityMcMonth as string) : 0,
         machineCount: 1,
         status: isOffline ? "offline" : m.status,
-        oxygenPurity: latestData.oxygenPurity !== undefined && latestData.oxygenPurity !== null ? parseFloat(latestData.oxygenPurity) : (m.dbOxygenPurity !== null ? parseFloat(m.dbOxygenPurity) : null),
-        tankPressure: latestData.tankPressure !== undefined && latestData.tankPressure !== null ? parseFloat(latestData.tankPressure) : (m.dbTankPressure !== null ? parseFloat(m.dbTankPressure) : null),
-        centralFlow: latestData.flowSentral !== undefined && latestData.flowSentral !== null ? parseFloat(latestData.flowSentral) : (m.dbFlowSentral !== null ? parseFloat(m.dbFlowSentral) : null),
-        boosterFlow: latestData.flowBooster !== undefined && latestData.flowBooster !== null ? parseFloat(latestData.flowBooster) : (m.dbFlowBooster !== null ? parseFloat(m.dbFlowBooster) : null),
-        totalFlow: latestData.totalFlow !== undefined && latestData.totalFlow !== null ? parseFloat(latestData.totalFlow) : (m.dbTotalFlow !== null ? parseFloat(m.dbTotalFlow) : null),
-        startOfDayTotalFlow: latestData.startOfDayTotalFlow !== undefined && latestData.startOfDayTotalFlow !== null ? parseFloat(latestData.startOfDayTotalFlow) : (m.dbStartOfDayTotalFlow !== null ? parseFloat(m.dbStartOfDayTotalFlow) : null),
-        runningTimeHours: latestData.runningTimeHours !== undefined && latestData.runningTimeHours !== null ? parseFloat(latestData.runningTimeHours) : (m.dbRunningTimeHours !== null ? parseFloat(m.dbRunningTimeHours) : null),
+        oxygenPurity: latestData.oxygenPurity !== undefined && latestData.oxygenPurity !== null ? parseFloat(latestData.oxygenPurity) : (m.dbOxygenPurity !== null ? parseFloat(m.dbOxygenPurity as string) : null),
+        tankPressure: latestData.tankPressure !== undefined && latestData.tankPressure !== null ? parseFloat(latestData.tankPressure) : (m.dbTankPressure !== null ? parseFloat(m.dbTankPressure as string) : null),
+        centralFlow: latestData.flowSentral !== undefined && latestData.flowSentral !== null ? parseFloat(latestData.flowSentral) : (m.dbFlowSentral !== null ? parseFloat(m.dbFlowSentral as string) : null),
+        boosterFlow: latestData.flowBooster !== undefined && latestData.flowBooster !== null ? parseFloat(latestData.flowBooster) : (m.dbFlowBooster !== null ? parseFloat(m.dbFlowBooster as string) : null),
+        totalFlow: latestData.totalFlow !== undefined && latestData.totalFlow !== null ? parseFloat(latestData.totalFlow) : (m.dbTotalFlow !== null ? parseFloat(m.dbTotalFlow as string) : null),
+        startOfDayTotalFlow: latestData.startOfDayTotalFlow !== undefined && latestData.startOfDayTotalFlow !== null ? parseFloat(latestData.startOfDayTotalFlow) : (m.dbStartOfDayTotalFlow !== null ? parseFloat(m.dbStartOfDayTotalFlow as string) : null),
+        runningTimeHours: latestData.runningTimeHours !== undefined && latestData.runningTimeHours !== null ? parseFloat(latestData.runningTimeHours) : (m.dbRunningTimeHours !== null ? parseFloat(m.dbRunningTimeHours as string) : null),
         lastUpdate: lastUpdateStr,
+        actualDailyFlow: 0,
       };
       
       // Calculate actual daily flow
       if (machineData.totalFlow !== null) {
         if (machineData.startOfDayTotalFlow !== null) {
-          (machineData as any).actualDailyFlow = Math.max(0, machineData.totalFlow - machineData.startOfDayTotalFlow);
+          machineData.actualDailyFlow = Math.max(0, machineData.totalFlow - machineData.startOfDayTotalFlow);
         } else {
-          (machineData as any).actualDailyFlow = 0; // If we don't have the baseline, we can't know daily flow yet
+          machineData.actualDailyFlow = 0; // If we don't have the baseline, we can't know daily flow yet
         }
       } else {
-        (machineData as any).actualDailyFlow = 0;
+        machineData.actualDailyFlow = 0;
       }
 
       return machineData;

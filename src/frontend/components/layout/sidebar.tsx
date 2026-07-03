@@ -28,7 +28,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     { label: "Rumah Sakit", href: appRoutes.clients, icon: Hospital, roles: ["admin", "operator"] },
   ];
 
-  const renderMenu = (items: { label: string; href: string; icon: any; roles: string[] }[]) => {
+  const renderMenu = (items: { label: string; href: string; icon: React.ElementType; roles: string[] }[]) => {
     return items
       .filter((item) => item.roles.includes(role))
       .map((item) => {

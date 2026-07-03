@@ -20,7 +20,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const fetchWithTimeout = (url: string, options: any = {}, timeoutMs = 10000) => {
+const fetchWithTimeout = (url: string, options: RequestInit = {}, timeoutMs = 10000) => {
   return Promise.race([
     fetch(url, options),
     new Promise<Response>((_, reject) => 

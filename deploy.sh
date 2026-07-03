@@ -18,6 +18,10 @@ fi
 if [ "$choice" == "1" ]; then
   echo "📦 Deploying via PM2..."
   
+  # Git Pull
+  echo "Git Pulling..." 
+  git pull origin main
+
   # Install dependencies
   echo "Installing dependencies..."
   pnpm install

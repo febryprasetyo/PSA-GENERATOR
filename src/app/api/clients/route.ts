@@ -3,7 +3,7 @@ import { db } from "@/backend/db";
 import { masterHospitals } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
 
-import { eq, ilike, or, asc, desc, sql, count } from "drizzle-orm";
+import { count, or, ilike, desc, asc } from "drizzle-orm";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     }
 
     if (whereClause) {
-      baseQuery = baseQuery.where(whereClause) as any;
+      baseQuery = baseQuery.where(whereClause) as typeof baseQuery;
     }
 
     let orderByClause;
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     else if (sortBy === "kelas") orderByClause = sortOrder === "desc" ? desc(masterHospitals.kelas) : asc(masterHospitals.kelas);
     else orderByClause = asc(masterHospitals.hospitalName);
 
-    baseQuery = baseQuery.orderBy(orderByClause).limit(limit).offset(offset) as any;
+    baseQuery = baseQuery.orderBy(orderByClause).limit(limit).offset(offset) as typeof baseQuery;
 
     const data = await baseQuery;
 

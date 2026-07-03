@@ -11,13 +11,14 @@ type MachineForm = {
   model: string;
   capacityMcDay: string;
   capacityMcMonth: string;
+  hospitalName?: string;
 };
 
 interface MachineModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: any) => Promise<void>;
-  machine?: any; // the selected machine if editing
+  onSave: (data: MachineForm | Record<string, unknown>) => Promise<void>;
+  machine?: Partial<MachineForm>; // the selected machine if editing
 }
 
 export function MachineModal({ isOpen, onClose, onSave, machine }: MachineModalProps) {
@@ -76,8 +77,8 @@ export function MachineModal({ isOpen, onClose, onSave, machine }: MachineModalP
         capacityMcMonth: formData.capacityMcMonth ? Number(formData.capacityMcMonth) : null,
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }

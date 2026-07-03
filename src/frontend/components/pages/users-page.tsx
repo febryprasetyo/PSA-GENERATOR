@@ -34,8 +34,8 @@ export default function UsersPage() {
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data.users);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }
@@ -83,8 +83,8 @@ export default function UsersPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Failed to delete user");
       fetchUsers();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Terjadi kesalahan");
     }
   };
 

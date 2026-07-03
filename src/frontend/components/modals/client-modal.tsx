@@ -66,8 +66,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
     try {
       await onSave(formData);
       onClose();
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan saat menyimpan data");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan saat menyimpan data");
     } finally {
       setIsLoading(false);
     }

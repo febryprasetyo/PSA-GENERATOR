@@ -3,11 +3,11 @@ import type { DashboardSummary, OxygenQualitySummary, StationFilters, StatusChar
 import type { StationWithMetrics } from "@/frontend/lib/types";
 
 export function getDashboardSummary(stations: StationWithMetrics[]): DashboardSummary {
-  const totalMachines = stations.reduce((sum, station) => sum + station.machineCount, 0);
-  const onlineMachines = stations.filter((station) => station.status === "online").reduce((sum, station) => sum + station.machineCount, 0);
-  const offlineMachines = stations.filter((station) => station.status === "offline").reduce((sum, station) => sum + station.machineCount, 0);
-  const totalCapacity = stations.reduce((sum, station) => sum + station.capacityMcDay, 0);
-  const totalFlow = stations.reduce((sum, station) => sum + station.totalFlow, 0);
+  const totalMachines = stations.reduce((sum, station) => sum + (station.machineCount || 0), 0);
+  const onlineMachines = stations.filter((station) => station.status === "online").reduce((sum, station) => sum + (station.machineCount || 0), 0);
+  const offlineMachines = stations.filter((station) => station.status === "offline").reduce((sum, station) => sum + (station.machineCount || 0), 0);
+  const totalCapacity = stations.reduce((sum, station) => sum + (station.capacityMcDay || 0), 0);
+  const totalFlow = stations.reduce((sum, station) => sum + (station.totalFlow || 0), 0);
   const totalActualDailyFlow = stations.reduce((sum, station) => sum + (station.actualDailyFlow || 0), 0);
   const activeStations = getActiveStations(stations);
   const averagePurity = getAveragePurity(activeStations);

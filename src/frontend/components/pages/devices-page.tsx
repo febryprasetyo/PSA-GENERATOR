@@ -4,13 +4,28 @@ import { useMemo, useState, useEffect } from "react";
 import { PageHeader } from "@/frontend/components/layout/page-header";
 import { MachineModal } from "@/frontend/components/modals/machine-modal";
 import { useAuth } from "@/frontend/hooks/useAuth";
-import { Edit2, Trash2, Plus, AlertTriangle, Check, X, RefreshCw } from "lucide-react";
+import { Edit2, Trash2, Plus, AlertTriangle, Check, X, RefreshCw, Unplug } from "lucide-react";
 
 const statusOptions = ["all", "online", "offline", "warning"] as const;
 
+interface MachineData {
+  id: string;
+  serialNumber: string;
+  machineName: string;
+  model: string;
+  capacityMcDay: string;
+  capacityMcMonth: string;
+  hospitalName?: string;
+  clientId?: string;
+  status: string;
+  pendingDelete?: boolean;
+  createdAt?: string | Date;
+  [key: string]: unknown;
+}
+
 export default function DevicesPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
-  const [machines, setMachines] = useState<any[]>([]);
+  const [machines, setMachines] = useState<MachineData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState("");
@@ -19,7 +34,7 @@ export default function DevicesPage() {
   const [statusFilter, setStatusFilter] = useState<typeof statusOptions[number]>("all");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
+  const [selectedMachine, setSelectedMachine] = useState<MachineData | null>(null);
 
   const fetchMachines = async () => {
     try {
@@ -28,8 +43,8 @@ export default function DevicesPage() {
       if (!res.ok) throw new Error("Failed to fetch machines");
       const data = await res.json();
       setMachines(data.machines || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +57,7 @@ export default function DevicesPage() {
     }
   }, [authLoading, currentUser]);
 
-  const handleSaveMachine = async (data: any) => {
+  const handleSaveMachine = async (data: Partial<MachineData>) => {
     const isEditing = !!selectedMachine;
     const url = isEditing ? `/api/machines/${selectedMachine.id}` : "/api/machines";
     const method = isEditing ? "PUT" : "POST";
@@ -69,8 +84,8 @@ export default function DevicesPage() {
       if (!res.ok) throw new Error(result.error || "Failed to sync machines");
       alert(`Berhasil sinkronisasi. ${result.syncedCount} mesin baru ditambahkan.`);
       fetchMachines();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : String(err));
     } finally {
       setIsSyncing(false);
     }
@@ -87,8 +102,8 @@ export default function DevicesPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Failed to delete machine");
       fetchMachines();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -98,8 +113,8 @@ export default function DevicesPage() {
       const res = await fetch(`/api/machines/${id}/approve-delete`, { method: "POST" });
       if (!res.ok) throw new Error("Gagal menyetujui");
       fetchMachines();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -109,8 +124,19 @@ export default function DevicesPage() {
       const res = await fetch(`/api/machines/${id}/reject-delete`, { method: "POST" });
       if (!res.ok) throw new Error("Gagal menolak");
       fetchMachines();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const handleUnassign = async (id: string) => {
+    if (!confirm("Yakin ingin menarik mesin ini dari Rumah Sakit (Unassign)? Riwayat data mesin ini di RS lama akan tetap tersimpan di database untuk keperluan pelaporan RS tersebut.")) return;
+    try {
+      const res = await fetch(`/api/machines/${id}/unassign`, { method: "POST" });
+      if (!res.ok) throw new Error("Gagal melakukan unassign mesin");
+      fetchMachines();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -313,6 +339,15 @@ export default function DevicesPage() {
                                 >
                                   <Edit2 className="h-4 w-4" />
                                 </button>
+                                {machine.hospitalName && (
+                                  <button
+                                    onClick={() => handleUnassign(machine.id)}
+                                    className="rounded p-1.5 text-slate-400 hover:bg-orange-50 hover:text-orange-600 transition"
+                                    title="Tarik Mesin (Unassign)"
+                                  >
+                                    <Unplug className="h-4 w-4" />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleDelete(machine.id, currentUser?.role === "operator")}
                                   className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
@@ -337,7 +372,7 @@ export default function DevicesPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveMachine}
-        machine={selectedMachine}
+        machine={selectedMachine || undefined}
       />
     </div>
   );
