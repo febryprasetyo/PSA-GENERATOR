@@ -18,7 +18,7 @@ export default function InnerLayout({
   const noSidebarPage = isViewerPage || isLoginPage;
 
   return (
-    <body className="min-h-screen bg-dashboard-bg">
+    <body className="min-h-screen bg-dashboard-bg" suppressHydrationWarning>
       <AuthProvider>
         {noSidebarPage ? (
           <main className="min-h-screen w-full overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
