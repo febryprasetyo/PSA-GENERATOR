@@ -32,9 +32,9 @@ if [ "$choice" == "1" ]; then
 
   # Database Migrations & Seeding
   echo "Running database migrations..."
-  pnpm run db:push
+  #pnpm run db:push
   echo "Seeding database..."
-  pnpm run db:seed
+  #pnpm run db:seed
 
   # Start via PM2
   echo "Starting PM2 processes..."
