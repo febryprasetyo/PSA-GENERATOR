@@ -33,7 +33,7 @@ describe("Export API (/api/history/export)", () => {
   });
 
   it("should return 401 if user is unauthenticated", async () => {
-    vi.mocked(requireAuth).mockResolvedValue({ error: "Unauthorized", status: 401 } as any);
+    vi.mocked(requireAuth).mockResolvedValue({ error: "Unauthorized", status: 401 } as unknown as Awaited<ReturnType<typeof requireAuth>>);
 
     const req = new NextRequest("http://localhost:3300/api/history/export");
     const res = await GET(req);
@@ -44,7 +44,7 @@ describe("Export API (/api/history/export)", () => {
   it("should return 400 if date range exceeds 90 days (3 months)", async () => {
     vi.mocked(requireAuth).mockResolvedValue({
       payload: { role: "admin", id: "u-1" },
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof requireAuth>>);
 
     const req = new NextRequest(
       "http://localhost:3300/api/history/export?startDate=2025-01-01&endDate=2025-06-01"
@@ -59,7 +59,7 @@ describe("Export API (/api/history/export)", () => {
   it("should return 400 if startDate is after endDate", async () => {
     vi.mocked(requireAuth).mockResolvedValue({
       payload: { role: "admin", id: "u-1" },
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof requireAuth>>);
 
     const req = new NextRequest(
       "http://localhost:3300/api/history/export?startDate=2025-06-01&endDate=2025-01-01"
@@ -74,7 +74,7 @@ describe("Export API (/api/history/export)", () => {
   it("should return cached CSV if present in Redis", async () => {
     vi.mocked(requireAuth).mockResolvedValue({
       payload: { role: "admin", id: "u-1" },
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof requireAuth>>);
 
     vi.mocked(redis.get).mockResolvedValue("\uFEFFHeader,Test\n1,2");
 

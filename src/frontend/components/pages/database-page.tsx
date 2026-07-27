@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/frontend/components/layout/page-header";
+import { ExportModal } from "@/frontend/components/modals/export-modal";
 
 const statusOptions = ["all", "online", "offline"] as const;
 
@@ -21,6 +22,8 @@ export default function DatabasePage() {
   const [customEndDate, setCustomEndDate] = useState<string>("");
   const [dateWarning, setDateWarning] = useState<string>("");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Simple debounce for search input
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,72 +125,6 @@ export default function DatabasePage() {
     };
   }, [page, limit, debouncedQuery, statusFilter, timeRange, customStartDate, customEndDate, refreshKey]);
 
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
-
-  const handleExport = async () => {
-    setIsExporting(true);
-    setExportError(null);
-
-    let startDate = "";
-    let endDate = "";
-    const now = new Date();
-
-    if (timeRange === "1d") {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 1);
-      startDate = d.toISOString();
-    } else if (timeRange === "1w") {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 7);
-      startDate = d.toISOString();
-    } else if (timeRange === "1m") {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 1);
-      startDate = d.toISOString();
-    } else if (timeRange === "3m") {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 3);
-      startDate = d.toISOString();
-    } else if (timeRange === "custom") {
-      if (customStartDate) {
-        startDate = new Date(customStartDate).toISOString();
-      }
-      if (customEndDate) {
-        const end = new Date(customEndDate);
-        end.setHours(23, 59, 59, 999);
-        endDate = end.toISOString();
-      }
-    }
-
-    const exportParams = new URLSearchParams({
-      query: debouncedQuery,
-    });
-    if (startDate) exportParams.set("startDate", startDate);
-    if (endDate) exportParams.set("endDate", endDate);
-
-    try {
-      const res = await fetch(`/api/history/export?${exportParams.toString()}`);
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "Gagal mengunduh data export.");
-      }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `machine_readings_export_${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      setExportError(err.message || "Gagal mengunduh file export.");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const entries = data?.entries || [];
   const total = data?.total || 0;
   const pageCount = Math.max(1, Math.ceil(total / limit));
@@ -196,6 +133,11 @@ export default function DatabasePage() {
     <div className="pb-12">
       <PageHeader title="Database Logger PSA" subtitle="Tampilkan semua data logger PSA untuk metric dan status stasiun." />
       
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
+
       <div className="panel overflow-hidden mt-6">
         <div className="border-b border-dashboard-border bg-white px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -203,12 +145,11 @@ export default function DatabasePage() {
               <div className="flex flex-wrap gap-3 items-center">
                 <button
                   type="button"
-                  onClick={handleExport}
-                  disabled={isExporting}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  {isExporting ? "Mengunduh CSV..." : "Export CSV (Excel)"}
+                  Export CSV (Excel)
                 </button>
                 <button
                   type="button"
@@ -225,11 +166,7 @@ export default function DatabasePage() {
             </div>
           </div>
 
-          {exportError && (
-            <div className="mx-6 mt-4 p-3 rounded-md border border-red-200 bg-red-50 text-sm text-red-600">
-              {exportError}
-            </div>
-          )}
+ 
 
           <div className="space-y-4 bg-white p-6">
             <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px]">

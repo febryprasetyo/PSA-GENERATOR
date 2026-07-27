@@ -67,9 +67,11 @@ describe('MQTT Hourly Listener Aggregation', () => {
       ]),
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(redis.pipeline).mockReturnValue(mockPipeline as any);
 
     const mockValues = vi.fn().mockResolvedValue(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(db.insert).mockReturnValue({ values: mockValues } as any);
 
     await flushHourlyReadings();
@@ -115,6 +117,7 @@ describe('MQTT Hourly Listener Aggregation', () => {
       ]),
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(redis.pipeline).mockReturnValue(mockPipeline as any);
 
     await flushHourlyReadings();
