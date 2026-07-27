@@ -122,12 +122,70 @@ export default function DatabasePage() {
     };
   }, [page, limit, debouncedQuery, statusFilter, timeRange, customStartDate, customEndDate, refreshKey]);
 
-  // Manual refresh function
-  const handleManualRefresh = () => {
-    setPage(1); // Optional: reset to page 1 on refresh, or just trigger re-fetch.
-    // To just re-fetch current page, we can use a dummy state to trigger useEffect, or call fetch directly.
-    // A simple trick to re-fetch is just force re-render with a timestamp:
-    setCustomStartDate(customStartDate); // Actually, better to add a refresh toggle state.
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setExportError(null);
+
+    let startDate = "";
+    let endDate = "";
+    const now = new Date();
+
+    if (timeRange === "1d") {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 1);
+      startDate = d.toISOString();
+    } else if (timeRange === "1w") {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 7);
+      startDate = d.toISOString();
+    } else if (timeRange === "1m") {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - 1);
+      startDate = d.toISOString();
+    } else if (timeRange === "3m") {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - 3);
+      startDate = d.toISOString();
+    } else if (timeRange === "custom") {
+      if (customStartDate) {
+        startDate = new Date(customStartDate).toISOString();
+      }
+      if (customEndDate) {
+        const end = new Date(customEndDate);
+        end.setHours(23, 59, 59, 999);
+        endDate = end.toISOString();
+      }
+    }
+
+    const exportParams = new URLSearchParams({
+      query: debouncedQuery,
+    });
+    if (startDate) exportParams.set("startDate", startDate);
+    if (endDate) exportParams.set("endDate", endDate);
+
+    try {
+      const res = await fetch(`/api/history/export?${exportParams.toString()}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Gagal mengunduh data export.");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `machine_readings_export_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setExportError(err.message || "Gagal mengunduh file export.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const entries = data?.entries || [];
@@ -142,7 +200,16 @@ export default function DatabasePage() {
         <div className="border-b border-dashboard-border bg-white px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-dashboard-text">Riwayat Data Mesin</h2>
-              <div className="grid gap-3 sm:grid-cols-2 items-center">
+              <div className="flex flex-wrap gap-3 items-center">
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  {isExporting ? "Mengunduh CSV..." : "Export CSV (Excel)"}
+                </button>
                 <button
                   type="button"
                   onClick={() => setRefreshKey(prev => prev + 1)}
@@ -151,12 +218,18 @@ export default function DatabasePage() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   Refresh Data
                 </button>
-                <div className="rounded-lg border border-dashboard-border bg-slate-50 px-4 py-3 text-sm text-dashboard-text">
+                <div className="rounded-lg border border-dashboard-border bg-slate-50 px-4 py-2.5 text-sm text-dashboard-text">
                   Total entri ditemukan: <span className="font-semibold">{isLoading && !data ? "..." : total}</span>
                 </div>
               </div>
             </div>
           </div>
+
+          {exportError && (
+            <div className="mx-6 mt-4 p-3 rounded-md border border-red-200 bg-red-50 text-sm text-red-600">
+              {exportError}
+            </div>
+          )}
 
           <div className="space-y-4 bg-white p-6">
             <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px]">
