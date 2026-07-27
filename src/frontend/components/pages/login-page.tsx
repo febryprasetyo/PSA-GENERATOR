@@ -6,14 +6,18 @@ import Link from "next/link";
 import { Monitor, Loader2, KeyRound, User, ChevronRight } from "lucide-react";
 import { appRoutes } from "@/frontend/lib/routes";
 import { useAuth } from "@/frontend/hooks/useAuth";
+import { useBrand } from "@/frontend/hooks/useBrand";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading } = useAuth();
-  
+  const brand = useBrand();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const isRedTheme = brand.brandColor === "red" || brand.brandColor === "#DC2626";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,26 +42,28 @@ export default function LoginPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-50 font-sans text-slate-800">
       {/* Background Ornaments / Gradients */}
-      <div className="pointer-events-none absolute left-0 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-blue-100 blur-[100px]"></div>
+      <div className={`pointer-events-none absolute left-0 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/3 -translate-y-1/3 rounded-full ${isRedTheme ? "bg-red-100" : "bg-blue-100"} blur-[100px]`}></div>
       <div className="pointer-events-none absolute bottom-0 right-0 -z-10 h-[500px] w-[500px] translate-x-1/3 translate-y-1/3 rounded-full bg-indigo-100 blur-[120px]"></div>
 
       <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50 md:flex">
           
           {/* Left Panel - Branding & Illustration */}
-          <div className="relative flex flex-col justify-between bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-8 md:w-5/12 lg:p-12 border-b border-slate-100 md:border-b-0 md:border-r">
+          <div className="relative flex flex-col justify-between bg-gradient-to-br from-slate-50 via-white to-slate-100 p-8 md:w-5/12 lg:p-12 border-b border-slate-100 md:border-b-0 md:border-r">
             <div className="relative z-10">
               <div className="mb-6">
-                <img src="/logo-mgm.png" alt="MGM Logo" className="h-16 w-auto object-contain" />
+                <img src={brand.brandLogo} alt={`${brand.brandName} Logo`} className="h-16 w-auto object-contain" />
               </div>
               <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 lg:text-4xl">
                 PSA Oxygen<br />
-                <span className="text-blue-600">Monitoring.</span>
+                <span className={isRedTheme ? "text-red-600" : "text-blue-600"}>Monitoring.</span>
               </h1>
               <p className="mt-4 text-base leading-relaxed text-slate-600">
-                Sistem pemantauan kualitas dan produksi gas medis oksigen PSA secara *real-time* untuk keandalan infrastruktur rumah sakit Anda.
+                Sistem pemantauan kualitas dan produksi gas medis oksigen PSA {brand.brandName} secara *real-time* untuk keandalan infrastruktur rumah sakit Anda.
               </p>
             </div>
+
+
             
             <div className="relative z-10 mt-12 md:mt-0">
               <div className="space-y-4">
@@ -143,7 +149,11 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className={`group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl ${
+                    isRedTheme
+                      ? "bg-red-600 hover:bg-red-700 shadow-red-600/20 hover:shadow-red-600/30 focus:ring-red-500/30"
+                      : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20 hover:shadow-blue-600/30 focus:ring-blue-500/30"
+                  } px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all focus:outline-none focus:ring-4 disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
                   {isLoading ? (
                     <Loader2 className="animate-spin" size={18} />

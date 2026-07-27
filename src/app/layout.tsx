@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import InnerLayout from "@/app/inner-layout";
+import { BRAND_NAME, BRAND_ICON } from "@/shared/config";
 
 export const metadata: Metadata = {
-  title: "PSA Oxygen Monitoring",
-  description: "Dashboard monitoring mesin PSA gas medis",
+  title: `PSA Oxygen Monitoring - ${BRAND_NAME}`,
+  description: `Dashboard monitoring mesin PSA gas medis ${BRAND_NAME}`,
   icons: {
-    icon: "/icon-mgm.png",
+    icon: BRAND_ICON,
   },
 };
+
 
 export default function RootLayout({
   children,

@@ -7,6 +7,7 @@ import { useAuth } from "@/frontend/hooks/useAuth";
 import type { UserRole } from "@/shared/types";
 import { CURRENT_VERSION } from "@/shared/changelog";
 import { ChangelogModal } from "@/frontend/components/modals/changelog-modal";
+import { useBrand } from "@/frontend/hooks/useBrand";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -16,8 +17,11 @@ interface SidebarProps {
 export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const brand = useBrand();
   const role = (user?.role as UserRole) || "client";
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+
+  const isRedTheme = brand.brandColor === "red" || brand.brandColor === "#DC2626";
 
   const overviewMenu = [
     { label: "Dashboard", href: appRoutes.home, icon: LayoutDashboard, roles: ["admin", "operator", "client"] },
@@ -36,6 +40,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       .map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
+
+        const activeBg = isRedTheme ? "bg-red-50" : "bg-blue-50";
+        const activeText = isRedTheme ? "text-red-600" : "text-dashboard-primary";
+        const activeBorder = isRedTheme ? "border-red-600" : "border-dashboard-primary";
+
         return (
           <Link
             key={item.label}
@@ -43,11 +52,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
             title={collapsed ? item.label : undefined}
             className={`group relative flex items-center gap-3 py-2.5 px-4 font-semibold transition-colors ${
               isActive
-                ? "bg-blue-50 text-dashboard-primary border-l-4 border-dashboard-primary"
+                ? `${activeBg} ${activeText} border-l-4 ${activeBorder}`
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-800 border-l-4 border-transparent"
             }`}
           >
-            <Icon size={18} className={isActive ? "text-dashboard-primary" : "text-slate-400 group-hover:text-slate-600"} />
+            <Icon size={18} className={isActive ? activeText : "text-slate-400 group-hover:text-slate-600"} />
             {!collapsed && <span className="truncate">{item.label}</span>}
           </Link>
         );
@@ -69,12 +78,13 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         <div className="flex h-16 shrink-0 items-center justify-between px-4 border-b border-dashboard-border">
           <div className="flex w-full items-center justify-center overflow-hidden h-full py-3">
             {collapsed ? (
-              <img src="/icon-mgm.png" alt="MGM Icon" className="h-full w-auto object-contain" />
+              <img src={brand.brandIcon} alt={`${brand.brandName} Icon`} className="h-full w-auto object-contain" />
             ) : (
-              <img src="/logo-mgm.png" alt="MGM Logo" className="h-full w-auto object-contain" />
+              <img src={brand.brandLogo} alt={`${brand.brandName} Logo`} className="h-full w-auto object-contain" />
             )}
           </div>
         </div>
+
         
         {/* Toggle Button */}
         <button

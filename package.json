@@ -6,13 +6,13 @@
     "dev": "next dev --turbopack -p 3300",
     "build": "next build",
     "lint": "eslint .",
-    "start": "next start -p 3300",
+    "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/backend/db/seed.ts",
     "db:setup-timescale": "tsx src/backend/db/setup_timescale.ts",
-    "mqtt": "tsx -r dotenv/config src/backend/mqtt/listener.ts"
+    "mqtt": "tsx src/backend/mqtt/listener.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

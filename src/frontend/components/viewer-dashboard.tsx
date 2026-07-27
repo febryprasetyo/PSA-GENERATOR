@@ -11,11 +11,15 @@ import { getDashboardSummary, getFilteredStations, getOxygenQualityIssues, getOx
 import { enrichStation } from "@/frontend/lib/metrics";
 import type { HealthFilter, SortKey, SortDirection, StatusFilter } from "@/frontend/lib/dashboard-types";
 import type { StationWithMetrics } from "@/frontend/lib/types";
+import { useBrand } from "@/frontend/hooks/useBrand";
 
 export function ViewerDashboard() {
+  const brand = useBrand();
   const [stations, setStations] = useState<StationWithMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+
 
   useEffect(() => {
     let isMounted = true;
@@ -94,8 +98,8 @@ export function ViewerDashboard() {
 
   return (
     <div className="pb-12">
-      <PageHeader title="Viewer" subtitle="TV Monitor Mode - Sistem Pemantauan Kualitas PSA Oxygen Online" showLogout={true} variant="dashboard">
-        <img src="/logo-mgm.png" alt="MGM Logo" className="h-12 w-auto object-contain" />
+      <PageHeader title="Viewer" subtitle={`TV Monitor Mode - Sistem Pemantauan Kualitas PSA Oxygen Online (${brand.brandName})`} showLogout={true} variant="dashboard">
+        <img src={brand.brandLogo} alt={`${brand.brandName} Logo`} className="h-12 w-auto object-contain" />
       </PageHeader>
       <KpiStrip summary={summary} />
 

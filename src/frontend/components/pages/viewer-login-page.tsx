@@ -5,13 +5,17 @@ import { LayoutDashboard, KeyRound, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { appRoutes } from "@/frontend/lib/routes";
 import { useAuth } from "@/frontend/hooks/useAuth";
+import { useBrand } from "@/frontend/hooks/useBrand";
 
 export default function ViewerLoginPage() {
   const router = useRouter();
   const { login, isLoading } = useAuth();
-  
+  const brand = useBrand();
+
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const isRedTheme = brand.brandColor === "red" || brand.brandColor === "#DC2626";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,26 +39,28 @@ export default function ViewerLoginPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-50 font-sans text-slate-800">
       {/* Background Ornaments / Gradients */}
-      <div className="pointer-events-none absolute left-0 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-blue-100 blur-[100px]"></div>
+      <div className={`pointer-events-none absolute left-0 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/3 -translate-y-1/3 rounded-full ${isRedTheme ? "bg-red-100" : "bg-blue-100"} blur-[100px]`}></div>
       <div className="pointer-events-none absolute bottom-0 right-0 -z-10 h-[500px] w-[500px] translate-x-1/3 translate-y-1/3 rounded-full bg-indigo-100 blur-[120px]"></div>
 
       <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50 md:flex">
           
           {/* Left Panel */}
-          <div className="relative flex flex-col justify-between bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-8 md:w-5/12 lg:p-12 border-b border-slate-100 md:border-b-0 md:border-r">
+          <div className="relative flex flex-col justify-between bg-gradient-to-br from-slate-50 via-white to-slate-100 p-8 md:w-5/12 lg:p-12 border-b border-slate-100 md:border-b-0 md:border-r">
             <div className="relative z-10">
               <div className="mb-6">
-                <img src="/logo-mgm.png" alt="MGM Logo" className="h-16 w-auto object-contain" />
+                <img src={brand.brandLogo} alt={`${brand.brandName} Logo`} className="h-16 w-auto object-contain" />
               </div>
               <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 lg:text-4xl">
                 Layar<br />
-                <span className="text-blue-600">Pemantau.</span>
+                <span className={isRedTheme ? "text-red-600" : "text-blue-600"}>Pemantau {brand.brandName}.</span>
               </h1>
               <p className="mt-4 text-base leading-relaxed text-slate-600">
                 Akses tampilan layar penuh (*fullscreen*) khusus untuk memonitor data tangki secara langsung tanpa gangguan kontrol operasional.
               </p>
             </div>
+
+
             
             <div className="relative z-10 mt-12 md:mt-0">
               <div className="space-y-4">

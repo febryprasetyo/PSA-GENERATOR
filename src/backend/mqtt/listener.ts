@@ -1,11 +1,12 @@
 import * as dotenv from "dotenv";
-dotenv.config({ path: ".env" });
+dotenv.config();
 
 import mqtt from "mqtt";
 import { db } from "../db";
 import { machines, machineReadings, machineLatestReadings } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { redis } from "../redis";
+import { isAutoRegisterSn, getRedisKey, getBrandName } from "../../shared/config";
 
 let MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || (process.env.MQTT_HOST ? `mqtt://${process.env.MQTT_HOST}:1883` : "mqtt://localhost:1883");
 if (MQTT_BROKER_URL && !MQTT_BROKER_URL.startsWith("mqtt://") && !MQTT_BROKER_URL.startsWith("mqtts://") && !MQTT_BROKER_URL.startsWith("ws://") && !MQTT_BROKER_URL.startsWith("wss://")) {
@@ -18,10 +19,10 @@ const MQTT_PASSWORD = process.env.MQTT_PASSWORD || "";
 const TOPIC_PATTERN = "data/psa/#";
 
 async function startListener() {
-  console.log(`[MQTT] Connecting to broker at ${MQTT_BROKER_URL}...`);
-  
+  console.log(`[MQTT] Connecting to broker at ${MQTT_BROKER_URL}... (Brand: ${getBrandName()}, Auto-Register SN: ${isAutoRegisterSn()}, DB: ${process.env.DATABASE_URL})`);
+
   const options: mqtt.IClientOptions = {
-    clientId: `psa_dashboard_${Math.random().toString(16).slice(2, 10)}`,
+    clientId: `psa_${getBrandName().toLowerCase()}_${Math.random().toString(16).slice(2, 10)}`,
     clean: true,
   };
 
@@ -68,13 +69,18 @@ async function startListener() {
 
       console.log(`[MQTT] Received data from ${serialNumber}:`, payload);
 
-      // 1. Check if machine exists, if not, auto-register
+      // 1. Check if machine exists, if not, check auto-register policy
       let machineId = null;
       let clientId = null;
       
       const existingMachines = await db.select().from(machines).where(eq(machines.serialNumber, serialNumber)).limit(1);
       
       if (existingMachines.length === 0) {
+        if (!isAutoRegisterSn()) {
+          console.log(`[MQTT] SN ${serialNumber} is not registered in ${getBrandName()} DB. Skipping (AUTO_REGISTER_SN is false).`);
+          return;
+        }
+
         console.log(`[MQTT] Auto-registering new machine: ${serialNumber}`);
         const [newMachine] = await db.insert(machines).values({
           serialNumber,
@@ -95,6 +101,7 @@ async function startListener() {
           })
           .where(eq(machines.id, machineId));
       }
+
 
       // Ignore machine readings if machine is not linked to any hospital (clientId is null)
       if (!clientId) {
@@ -165,8 +172,8 @@ async function startListener() {
         rawPayload: payload,
       };
 
-      await redis.rpush(`psa:machine:hourly_samples:${serialNumber}`, JSON.stringify(sampleData));
-      await redis.sadd("psa:machine:hourly_active_serials", serialNumber);
+      await redis.rpush(getRedisKey(`machine:hourly_samples:${serialNumber}`), JSON.stringify(sampleData));
+      await redis.sadd(getRedisKey("machine:hourly_active_serials"), serialNumber);
 
       const latestDataForUpsert = {
         ...readingData,
@@ -175,7 +182,7 @@ async function startListener() {
       };
 
       // 3. Update Redis with latest reading (Fast layer - Realtime monitoring)
-      const redisKey = `psa:machine:latest:${serialNumber}`;
+      const redisKey = getRedisKey(`machine:latest:${serialNumber}`);
       await redis.set(redisKey, JSON.stringify({
         ...latestDataForUpsert,
         receivedAt: new Date(),
@@ -221,19 +228,20 @@ async function startListener() {
 export async function flushHourlyReadings() {
   console.log("[MQTT Aggregator] Flushing hourly readings to PostgreSQL...");
   try {
-    const activeSerials = await redis.smembers("psa:machine:hourly_active_serials");
+    const activeSerials = await redis.smembers(getRedisKey("machine:hourly_active_serials"));
     if (!activeSerials || activeSerials.length === 0) {
       console.log("[MQTT Aggregator] No active machine samples to flush.");
       return;
     }
 
     for (const serialNumber of activeSerials) {
-      const listKey = `psa:machine:hourly_samples:${serialNumber}`;
+      const listKey = getRedisKey(`machine:hourly_samples:${serialNumber}`);
       
       const pipeline = redis.pipeline();
       pipeline.lrange(listKey, 0, -1);
       pipeline.del(listKey);
-      pipeline.srem("psa:machine:hourly_active_serials", serialNumber);
+      pipeline.srem(getRedisKey("machine:hourly_active_serials"), serialNumber);
+
 
       const results = await pipeline.exec();
       if (!results) continue;

@@ -4,6 +4,7 @@ import { machines } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
 import { redis } from "@/backend/redis";
 import { eq } from "drizzle-orm";
+import { isAutoRegisterSn, getRedisPrefix } from "@/shared/config";
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -14,29 +15,36 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Get all keys matching psa:machine:latest:* from Redis
-    const keys = await redis.keys("psa:machine:latest:*");
+    // 1. Get all keys matching REDIS_PREFIX + machine:latest:* from Redis
+    const prefixStr = getRedisPrefix();
+    const prefix = prefixStr.endsWith(":") ? prefixStr : `${prefixStr}:`;
+    const searchPattern = `${prefix}machine:latest:*`;
+    const keys = await redis.keys(searchPattern);
     let syncedCount = 0;
 
     for (const key of keys) {
-      // key format: psa:machine:latest:SERIAL
-      const serialNumber = key.replace("psa:machine:latest:", "");
+      // key format: <prefix>machine:latest:SERIAL
+      const serialNumber = key.replace(`${prefix}machine:latest:`, "");
       
       if (!serialNumber) continue;
 
       // 2. Check if it exists in DB
       const existing = await db.select({ id: machines.id, deletedAt: machines.deletedAt }).from(machines).where(eq(machines.serialNumber, serialNumber)).limit(1);
 
-      // 3. If not exists, insert it
+      // 3. If not exists, insert it ONLY IF AUTO_REGISTER_SN is enabled
       if (existing.length === 0) {
-        await db.insert(machines).values({
-          serialNumber,
-          machineName: `Auto-Synced (${serialNumber})`,
-          status: "online",
-          lastSeenAt: new Date(),
-        });
-        syncedCount++;
+        if (isAutoRegisterSn()) {
+
+          await db.insert(machines).values({
+            serialNumber,
+            machineName: `Auto-Synced (${serialNumber})`,
+            status: "online",
+            lastSeenAt: new Date(),
+          });
+          syncedCount++;
+        }
       } else if (existing[0].deletedAt !== null) {
+
         // If it exists but was soft deleted, undelete it
         await db.update(machines)
           .set({ 

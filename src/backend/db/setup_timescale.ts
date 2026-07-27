@@ -9,6 +9,10 @@ async function main() {
     await db.execute(sql`CREATE EXTENSION IF NOT EXISTS timescaledb;`);
     console.log("TimescaleDB extension ensured.");
     
+    // TimescaleDB hypertable requires partition column (terminal_time) to be part of the primary key constraint
+    await db.execute(sql`ALTER TABLE machine_readings DROP CONSTRAINT IF EXISTS machine_readings_pkey;`);
+    await db.execute(sql`ALTER TABLE machine_readings ADD CONSTRAINT machine_readings_pkey PRIMARY KEY (id, terminal_time);`);
+
     // Create hypertable
     await db.execute(sql`SELECT create_hypertable('machine_readings', 'terminal_time', if_not_exists => TRUE);`);
     console.log("machine_readings successfully converted to hypertable.");

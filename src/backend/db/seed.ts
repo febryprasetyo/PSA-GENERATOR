@@ -12,8 +12,9 @@ async function main() {
     const rsData = rsDataModule.default;
 
     const saltRounds = 10;
-    const defaultPassword = process.env.DEMO_PASSWORD;
-    const passwordHash = await bcrypt.hash(defaultPassword!, saltRounds);
+    const defaultPassword = process.env.DEMO_PASSWORD || process.env.SEED_DEFAULT_PASSWORD || "123456";
+    const passwordHash = await bcrypt.hash(defaultPassword, saltRounds);
+
 
     const usersToInsert = [
       {
