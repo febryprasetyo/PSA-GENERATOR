@@ -32,7 +32,8 @@ interface PreviewEntry {
 
 export function ExportModal({ isOpen, onClose }: ExportModalProps) {
   const [machines, setMachines] = useState<MachineItem[]>([]);
-  const [selectedStation, setSelectedStation] = useState<string>("all");
+  // selectedTarget format: "all:all" | "hospital:<clientId>" | "machine:<serialNumber>"
+  const [selectedTarget, setSelectedTarget] = useState<string>("all:all");
   const [timeRange, setTimeRange] = useState<string>("1w");
   
   const [startDate, setStartDate] = useState<string>("");
@@ -78,7 +79,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     }
   }, [timeRange]);
 
-  // Validate dates
+  // Validate dates & reset preview when selection changes
   useEffect(() => {
     setHasPreviewed(false);
     setPreviewData(null);
@@ -104,7 +105,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     }
 
     setDateError("");
-  }, [startDate, endDate, selectedStation]);
+  }, [startDate, endDate, selectedTarget]);
 
   // Fetch machines list on modal open
   useEffect(() => {
@@ -122,6 +123,32 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
 
   if (!isOpen) return null;
 
+  // Filter ONLY machines that have an assigned hospital (clientId & hospitalName)
+  const assignedMachines = machines.filter((m) => m.clientId && m.hospitalName);
+
+  // Group assigned machines by Hospital ID/Name
+  const hospitalGroups = assignedMachines.reduce((acc, m) => {
+    const hospId = m.clientId!;
+    const hospName = m.hospitalName!;
+    if (!acc[hospId]) {
+      acc[hospId] = { id: hospId, name: hospName, machines: [] };
+    }
+    acc[hospId].machines.push(m);
+    return acc;
+  }, {} as Record<string, { id: string; name: string; machines: MachineItem[] }>);
+
+  // Parse selectedTarget helper
+  const getSelectedParams = () => {
+    let hospitalId = "";
+    let serialNumber = "";
+    if (selectedTarget.startsWith("hospital:")) {
+      hospitalId = selectedTarget.replace("hospital:", "");
+    } else if (selectedTarget.startsWith("machine:")) {
+      serialNumber = selectedTarget.replace("machine:", "");
+    }
+    return { hospitalId, serialNumber };
+  };
+
   // Handle Fetch Preview Data
   const handleFetchPreview = async () => {
     if (dateError) return;
@@ -130,14 +157,14 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     setExportError("");
 
     try {
+      const { hospitalId, serialNumber } = getSelectedParams();
       const queryParams = new URLSearchParams({
         page: "1",
         limit: "5",
       });
 
-      if (selectedStation !== "all") {
-        queryParams.set("query", selectedStation);
-      }
+      if (hospitalId) queryParams.set("hospitalId", hospitalId);
+      if (serialNumber) queryParams.set("serialNumber", serialNumber);
 
       if (startDate) {
         queryParams.set("startDate", new Date(startDate).toISOString());
@@ -173,10 +200,12 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     setExportError("");
 
     try {
+      const { hospitalId, serialNumber } = getSelectedParams();
       const queryParams = new URLSearchParams();
-      if (selectedStation !== "all") {
-        queryParams.set("serialNumber", selectedStation);
-      }
+
+      if (hospitalId) queryParams.set("hospitalId", hospitalId);
+      if (serialNumber) queryParams.set("serialNumber", serialNumber);
+
       if (startDate) {
         queryParams.set("startDate", new Date(startDate).toISOString());
       }
@@ -224,7 +253,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-dashboard-text">Export Data Machine Readings</h2>
-              <p className="text-xs text-dashboard-muted">Pilih stasiun & rentang waktu, verifikasi pratinjau, lalu unduh CSV.</p>
+              <p className="text-xs text-dashboard-muted">Pilih Rumah Sakit/stasiun & rentang waktu, verifikasi pratinjau, lalu unduh CSV.</p>
             </div>
           </div>
           <button
@@ -241,23 +270,30 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
           {/* Filter Form */}
           <div className="grid gap-4 md:grid-cols-2">
             
-            {/* Station Filter */}
+            {/* Hospital & Machine Filter Dropdown */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-dashboard-text flex items-center gap-1.5">
                 <HardDrive className="h-3.5 w-3.5 text-dashboard-primary" />
-                Pilih Stasiun / Rumah Sakit
+                Pilih Rumah Sakit & Mesin
               </label>
               <select
-                value={selectedStation}
-                onChange={(e) => setSelectedStation(e.target.value)}
+                value={selectedTarget}
+                onChange={(e) => setSelectedTarget(e.target.value)}
                 disabled={isLoadingMachines}
                 className="h-10 rounded-md border border-dashboard-border bg-slate-50 px-3 text-sm outline-none transition focus:border-dashboard-primary focus:ring-2 focus:ring-blue-100 disabled:opacity-50"
               >
-                <option value="all">Semua Stasiun / Rumah Sakit</option>
-                {machines.map((m) => (
-                  <option key={m.id} value={m.serialNumber}>
-                    {m.hospitalName ? `${m.hospitalName} (${m.serialNumber})` : m.serialNumber}
-                  </option>
+                <option value="all:all">Semua Rumah Sakit & Stasiun</option>
+                {Object.values(hospitalGroups).map((group) => (
+                  <optgroup key={group.id} label={`🏥 ${group.name}`}>
+                    <option value={`hospital:${group.id}`}>
+                      Semua Mesin di {group.name} ({group.machines.length} Mesin)
+                    </option>
+                    {group.machines.map((m) => (
+                      <option key={m.id} value={`machine:${m.serialNumber}`}>
+                        └ {m.machineName || "Mesin"} ({m.serialNumber})
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>
@@ -373,7 +409,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
                   <table className="min-w-full divide-y divide-dashboard-border text-left text-xs">
                     <thead className="bg-slate-100 text-dashboard-text font-semibold">
                       <tr>
-                        <th className="px-3 py-2">Stasiun</th>
+                        <th className="px-3 py-2">Stasiun / Rumah Sakit</th>
                         <th className="px-3 py-2">Waktu</th>
                         <th className="px-3 py-2">O2 Purity</th>
                         <th className="px-3 py-2">Tank Press</th>

@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
     // Date filters
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const serialNumber = searchParams.get("serialNumber") || "";
+    const hospitalId = searchParams.get("hospitalId") || "";
 
     const offset = (page - 1) * limit;
 
@@ -35,6 +37,12 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ entries: [], total: 0, page, limit });
       }
       conditions.push(eq(machines.clientId, userClientId as string));
+    } else if (hospitalId) {
+      conditions.push(eq(machines.clientId, hospitalId));
+    }
+
+    if (serialNumber) {
+      conditions.push(eq(machines.serialNumber, serialNumber));
     }
 
     // Search query constraint
