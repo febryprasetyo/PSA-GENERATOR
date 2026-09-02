@@ -3,7 +3,7 @@ import { db } from "@/backend/db";
 import { users } from "@/backend/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { signToken } from "@/backend/auth/jwt";
+import { buildSessionPayload, signToken } from "@/backend/auth/jwt";
 
 export async function POST(request: Request) {
   try {
@@ -37,16 +37,11 @@ export async function POST(request: Request) {
     const expiresIn = isViewer ? "24h" : "1h";
     const maxAge = isViewer ? 24 * 60 * 60 : 60 * 60; // 24 hours or 1 hour
 
-    const token = await signToken({
-      userId: user.id,
-      name: user.name,
-      username: user.username,
-      role: user.role,
-    }, expiresIn);
+    const token = await signToken(buildSessionPayload(user), expiresIn);
 
     const response = NextResponse.json({
       success: true,
-      user: { name: user.name, role: user.role, username: user.username },
+      user: { name: user.name, role: user.role, username: user.username, clientId: user.clientId },
     });
 
     response.cookies.set({

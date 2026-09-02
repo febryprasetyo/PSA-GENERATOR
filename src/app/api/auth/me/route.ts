@@ -25,6 +25,7 @@ export async function GET() {
       name: payload.name,
       username: payload.username,
       role: payload.role,
+      clientId: payload.clientId || null,
     },
   });
 }

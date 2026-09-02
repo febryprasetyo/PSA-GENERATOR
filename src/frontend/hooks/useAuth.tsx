@@ -9,6 +9,7 @@ interface AuthUser {
   name: string;
   username: string;
   role: string;
+  clientId?: string | null;
 }
 
 interface AuthContextType {

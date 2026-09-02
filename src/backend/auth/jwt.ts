@@ -2,9 +2,26 @@ import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 export interface SessionPayload extends JWTPayload {
   userId: string;
+  clientId?: string | null;
   name: string;
   username: string;
   role: string;
+}
+
+export function buildSessionPayload(user: {
+  id: string;
+  clientId?: string | null;
+  name: string;
+  username: string;
+  role: string;
+}): SessionPayload {
+  return {
+    userId: user.id,
+    clientId: user.clientId || null,
+    name: user.name,
+    username: user.username,
+    role: user.role,
+  };
 }
 
 const getSecretKey = () => {

@@ -25,7 +25,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const overviewMenu = [
     { label: "Dashboard", href: appRoutes.home, icon: LayoutDashboard, roles: ["admin", "operator", "client"] },
-    { label: "Database", href: appRoutes.database, icon: Database, roles: ["admin", "operator"] },
+    { label: "Database", href: appRoutes.database, icon: Database, roles: ["admin", "operator", "client"] },
   ];
 
   const managementMenu = [

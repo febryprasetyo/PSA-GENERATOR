@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { signToken, verifyToken, type SessionPayload } from '../auth/jwt';
+import { buildSessionPayload, signToken, verifyToken, type SessionPayload } from '../auth/jwt';
 import { SignJWT } from 'jose';
 
 // Create a simple JWT test
@@ -29,6 +29,16 @@ describe('Auth Utility - JWT', () => {
     expect(verified).toBeDefined();
     expect(verified?.username).toBe('testuser');
     expect(verified?.role).toBe('admin');
+  });
+
+  it('includes the assigned hospital in a client session', () => {
+    expect(buildSessionPayload({
+      id: 'client-1',
+      clientId: 'hospital-cepoko',
+      name: 'RS Cepoko',
+      username: 'cepoko',
+      role: 'client',
+    })).toMatchObject({ userId: 'client-1', clientId: 'hospital-cepoko' });
   });
 
   it('should return null for invalid tokens', async () => {

@@ -3,6 +3,7 @@ import { db } from "@/backend/db";
 import { machineReadings, machines, masterHospitals } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
 import { eq, like, or, desc, sql, and, isNull, isNotNull, gte, lte } from "drizzle-orm";
+import { resolveHospitalScope } from "@/backend/auth/client-scope";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -31,15 +32,9 @@ export async function GET(request: NextRequest) {
     // Base conditions
     const conditions = [];
 
-    // Client constraint
-    if (userRole === "client") {
-      if (!userClientId) {
-        return NextResponse.json({ entries: [], total: 0, page, limit });
-      }
-      conditions.push(eq(machines.clientId, userClientId as string));
-    } else if (hospitalId) {
-      conditions.push(eq(machines.clientId, hospitalId));
-    }
+    const scope = resolveHospitalScope(userRole, userClientId as string | undefined, hospitalId);
+    if (!scope.allowed) return NextResponse.json({ entries: [], total: 0, page, limit });
+    if (scope.hospitalId) conditions.push(eq(machines.clientId, scope.hospitalId));
 
     if (serialNumber) {
       conditions.push(eq(machines.serialNumber, serialNumber));

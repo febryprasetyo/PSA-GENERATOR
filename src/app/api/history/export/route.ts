@@ -5,6 +5,7 @@ import { requireAuth } from "@/backend/auth/guard";
 import { eq, like, or, desc, and, isNull, isNotNull, gte, lte, avg, count, inArray, sql } from "drizzle-orm";
 import { redis } from "@/backend/redis";
 import { buildCsvHeader, shouldIncludeSerialNumber } from "./export-query";
+import { resolveHospitalScope } from "@/backend/auth/client-scope";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -52,19 +53,15 @@ export async function GET(request: NextRequest) {
     // Base conditions
     const conditions = [];
 
-    // 1. Role-based client constraint
-    if (userRole === "client") {
-      if (!userClientId) {
-        return new NextResponse("\uFEFFNo data available for user without assigned hospital", {
-          status: 200,
-          headers: { "Content-Type": "text/csv; charset=utf-8" },
-        });
-      }
-      conditions.push(eq(machines.clientId, userClientId as string));
-    } else if (hospitalIdParam) {
-      // Admin / Operator filtering by specific hospital
-      conditions.push(eq(machines.clientId, hospitalIdParam));
+    // 1. Role-based hospital constraint. Client requests can never override their assigned RS.
+    const scope = resolveHospitalScope(userRole, userClientId as string | undefined, hospitalIdParam);
+    if (!scope.allowed) {
+      return new NextResponse("\uFEFFNo data available for user without assigned hospital", {
+        status: 200,
+        headers: { "Content-Type": "text/csv; charset=utf-8" },
+      });
     }
+    if (scope.hospitalId) conditions.push(eq(machines.clientId, scope.hospitalId));
 
     // 2. Specific machine filter
     if (serialNumberParam) {
