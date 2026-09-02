@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/backend/db";
 import { machineReadings, machines, masterHospitals } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
-import { eq, like, or, desc, and, isNull, isNotNull, gte, lte } from "drizzle-orm";
+import { eq, like, or, desc, and, isNull, isNotNull, gte, lte, avg, count, inArray, sql } from "drizzle-orm";
 import { redis } from "@/backend/redis";
+import { buildCsvHeader, shouldIncludeSerialNumber } from "./export-query";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -81,8 +82,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Date range constraint
-    conditions.push(gte(machineReadings.receivedAt, startDate));
-    conditions.push(lte(machineReadings.receivedAt, endDate));
+    conditions.push(gte(machineReadings.terminalTime, startDate));
+    conditions.push(lte(machineReadings.terminalTime, endDate));
 
     // 5. Exclude soft-deleted machines & unassigned machines
     conditions.push(isNull(machines.deletedAt));
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
     const whereClause = and(...conditions);
 
     // Caching Key Strategy (Redis)
-    const cacheKey = `export:machine_readings:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
+    const cacheKey = `export:v2:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
 
     try {
       const cachedCsv = await redis.get(cacheKey);
@@ -110,6 +111,33 @@ export async function GET(request: NextRequest) {
       console.warn("[Export API] Redis cache read error:", redisErr);
     }
 
+    const bucketStart = sql<Date>`date_bin('30 minutes', ${machineReadings.terminalTime}, TIMESTAMPTZ '1970-01-01 00:00:00+00')`;
+    const groupedRows = await db.select({
+      hospitalId: masterHospitals.id,
+      hospitalName: masterHospitals.hospitalName,
+      machineId: machines.id,
+      serialNumber: machines.serialNumber,
+      bucketStart,
+      oxygenPurity: avg(machineReadings.oxygenPurity),
+      tankPressure: avg(machineReadings.tankPressure),
+      centralFlow: avg(machineReadings.flowSentral),
+      boosterFlow: avg(machineReadings.flowBooster),
+      totalFlow: avg(machineReadings.totalFlow),
+      runningTimeHours: avg(machineReadings.runningTimeHours),
+    }).from(machineReadings)
+      .leftJoin(machines, eq(machineReadings.machineId, machines.id))
+      .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
+      .where(whereClause)
+      .groupBy(masterHospitals.id, masterHospitals.hospitalName, machines.id, machines.serialNumber, bucketStart)
+      .orderBy(desc(bucketStart));
+
+    const representedHospitalIds = [...new Set(groupedRows.map((row) => row.hospitalId).filter((id): id is string => Boolean(id)))];
+    const machineCounts = representedHospitalIds.length ? await db.select({
+      hospitalId: machines.clientId,
+      value: count(),
+    }).from(machines).where(and(inArray(machines.clientId, representedHospitalIds), isNull(machines.deletedAt))).groupBy(machines.clientId) : [];
+    const includeSerialNumber = shouldIncludeSerialNumber(machineCounts.map((item) => Number(item.value)));
+
     // Streaming CSV output with UTF-8 BOM
     const encoder = new TextEncoder();
 
@@ -120,59 +148,24 @@ export async function GET(request: NextRequest) {
           controller.enqueue(encoder.encode("\uFEFF"));
 
           // CSV Header
-          const header = [
-            "No",
-            "Serial Number",
-            "Nama Rumah Sakit",
-            "Waktu (Timestamp)",
-            "Oxygen Purity (%)",
-            "Tank Pressure (bar)",
-            "Flow Meter Sentral (L/min)",
-            "Flow Meter Booster (L/min)",
-            "Total Flow",
-            "Running Time (Jam)",
-          ].map((h) => `"${h}"`).join(",") + "\n";
+          const header = buildCsvHeader(includeSerialNumber).map((h) => `"${h}"`).join(",") + "\n";
 
           controller.enqueue(encoder.encode(header));
 
-          const CHUNK_SIZE = 2000;
-          let offset = 0;
           let rowNumber = 1;
           let fullCsvAccumulator = header;
-
-          while (true) {
-            const batch = await db
-              .select({
-                id: machineReadings.id,
-                serialNumber: machineReadings.serialNumber,
-                hospitalName: masterHospitals.hospitalName,
-                timestamp: machineReadings.receivedAt,
-                oxygenPurity: machineReadings.oxygenPurity,
-                tankPressure: machineReadings.tankPressure,
-                centralFlow: machineReadings.flowSentral,
-                boosterFlow: machineReadings.flowBooster,
-                totalFlow: machineReadings.totalFlow,
-                runningTimeHours: machineReadings.runningTimeHours,
-              })
-              .from(machineReadings)
-              .leftJoin(machines, eq(machineReadings.machineId, machines.id))
-              .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
-              .where(whereClause)
-              .orderBy(desc(machineReadings.receivedAt))
-              .limit(CHUNK_SIZE)
-              .offset(offset);
-
-            if (batch.length === 0) break;
-
+          const CHUNK_SIZE = 2000;
+          for (let offset = 0; offset < groupedRows.length; offset += CHUNK_SIZE) {
+            const batch = groupedRows.slice(offset, offset + CHUNK_SIZE);
             let chunkStr = "";
             for (const item of batch) {
-              const formattedTime = item.timestamp
-                ? new Date(item.timestamp).toISOString().replace("T", " ").substring(0, 19)
+              const formattedTime = item.bucketStart
+                ? new Date(item.bucketStart).toISOString().replace("T", " ").substring(0, 19)
                 : "-";
               
               const row = [
                 rowNumber++,
-                `"${(item.serialNumber || "").replace(/"/g, '""')}"`,
+                ...(includeSerialNumber ? [`"${(item.serialNumber || "").replace(/"/g, '""')}"`] : []),
                 `"${(item.hospitalName || "Not Assigned").replace(/"/g, '""')}"`,
                 `"${formattedTime}"`,
                 item.oxygenPurity ? parseFloat(item.oxygenPurity).toFixed(2) : "0.00",
@@ -188,9 +181,6 @@ export async function GET(request: NextRequest) {
 
             controller.enqueue(encoder.encode(chunkStr));
             fullCsvAccumulator += chunkStr;
-
-            offset += batch.length;
-            if (batch.length < CHUNK_SIZE) break;
           }
 
           // Cache in Redis for 5 minutes (300 seconds) if size < 10MB
