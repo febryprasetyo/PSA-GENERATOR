@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getSyncRedisPrefix } from "@/shared/config";
+import { getMachineLatestRedisKey, getSyncRedisPrefix } from "@/shared/config";
 
 describe("sync Redis prefix", () => {
   afterEach(() => {
@@ -16,5 +16,13 @@ describe("sync Redis prefix", () => {
     vi.stubEnv("REDIS_PREFIX", "psa:dev:");
     vi.stubEnv("SYNC_REDIS_PREFIX", "");
     expect(getSyncRedisPrefix()).toBe("psa:dev:");
+  });
+
+  it("builds dashboard telemetry keys from the configured sync source", () => {
+    vi.stubEnv("REDIS_PREFIX", "psa:dev:");
+    vi.stubEnv("SYNC_REDIS_PREFIX", "psa:mgm:");
+
+    expect(getMachineLatestRedisKey("7031159043030182032"))
+      .toBe("psa:mgm:machine:latest:7031159043030182032");
   });
 });

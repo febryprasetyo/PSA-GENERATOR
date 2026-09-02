@@ -4,6 +4,7 @@ import { machines, masterHospitals, machineLatestReadings, areaHospitals, areas 
 import { requireAuth } from "@/backend/auth/guard";
 import { eq, isNull, and } from "drizzle-orm";
 import { redis } from "@/backend/redis";
+import { getMachineLatestRedisKey } from "@/shared/config";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -95,7 +96,7 @@ export async function GET(request: Request) {
 
     // Fetch latest data from Redis
     const formattedMachines = await Promise.all(allMachines.map(async (m: DashboardMachine) => {
-      const redisKey = `psa:machine:latest:${m.serialNumber}`;
+      const redisKey = getMachineLatestRedisKey(m.serialNumber);
       const latestDataStr = await redis.get(redisKey);
       let latestData: LatestData = {};
       

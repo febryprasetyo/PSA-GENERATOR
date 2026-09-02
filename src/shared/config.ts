@@ -26,6 +26,12 @@ export function getSyncRedisPrefix(): string {
   return process.env.SYNC_REDIS_PREFIX || getRedisPrefix();
 }
 
+export function getMachineLatestRedisKey(serialNumber: string): string {
+  const prefixStr = getSyncRedisPrefix();
+  const prefix = prefixStr.endsWith(":") ? prefixStr : `${prefixStr}:`;
+  return `${prefix}machine:latest:${serialNumber}`;
+}
+
 // Deprecated static fallbacks for backwards compatibility
 export const BRAND_NAME = getBrandName();
 export const BRAND_LOGO = getBrandLogo();
