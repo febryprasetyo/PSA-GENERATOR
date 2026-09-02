@@ -13,6 +13,7 @@ Built with scalability, reliability, and enterprise-grade QA/QC standards in min
 - **Real-Time IoT Integration**: Continuously receives and parses live telemetry data from oxygen generators via **MQTT**.
 - **Advanced Analytics Dashboard**: Aggregates vital metrics such as Oxygen Purity, Tank Pressure, Flow Rates, and Overall System Utilization.
 - **Smart Status Derivation**: Automatically calculates machine health (Online, Offline, Warning, Critical) based on incoming telemetry metrics and predefined thresholds.
+- **Dynamic Area Monitoring**: Groups hospitals into admin-defined Areas and filters all child machines from the dashboard.
 - **Role-Based Access Control (RBAC)**: Secure authentication via **JWT** handling different tiers of access (Admin, Operator, Viewer).
 - **Smart TV Compatibility**: Specifically optimized for headless displays and Smart TVs (e.g., LG WebOS), utilizing robust memory management, uncontrolled form state patterns, and network timeout handlers.
 - **Industrial Grade Testing**: Fully tested backend and frontend architecture utilizing **Vitest** and **React Testing Library**.
@@ -84,6 +85,15 @@ pnpm run dev
 To start the background MQTT listener for data ingestion (if running as a separate service):
 ```bash
 pnpm run mqtt
+```
+
+The listener keeps realtime latest values on every message and persists retry-safe averages on aligned 10-minute intervals. CSV exports aggregate those records into aligned 30-minute averages.
+
+After pulling a release that introduces Area management, apply the additive schema before starting the application:
+
+```bash
+pnpm run db:push
+pnpm run db:setup-timescale
 ```
 
 Open [http://localhost:3300](http://localhost:3300) in your browser to view the application.

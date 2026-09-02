@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- Master Area dinamis dengan relasi satu Area ke banyak Rumah Sakit dan satu Area maksimum per Rumah Sakit.
+- Filter Area dan status belum memiliki Area pada tabel dashboard.
+
+### Changed
+- Purity `≥90%` ditampilkan Optimal (hijau) dan `<90%` Kritis (kuning).
+- Label kapasitas menggunakan `Nm³`, sedangkan flow menggunakan `Nm³/h`.
+- Data historis MQTT disimpan sebagai rata-rata per interval 10 menit.
+- Ekspor CSV menggunakan rata-rata per 30 menit dan hanya menampilkan SN bila hasil memuat Rumah Sakit multi-mesin.
+
+### Fixed
+- Aksi create Rumah Sakit kembali tampil pada header master data dan nama divalidasi setelah trimming.
+
 ## [1.2.0] - 2026-07-27
 
 ### Added
