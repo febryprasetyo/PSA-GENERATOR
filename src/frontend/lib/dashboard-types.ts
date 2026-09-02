@@ -4,6 +4,7 @@ export type SortKey = "hospitalName" | "capacityMcDay" | "totalFlow" | "oxygenPu
 export type SortDirection = "asc" | "desc";
 export type StatusFilter = "all" | MachineStatus;
 export type HealthFilter = "all" | HealthLevel;
+export type AreaFilter = "all" | "unassigned" | string;
 
 export type DashboardSummary = {
   totalMachines: number;
@@ -29,6 +30,7 @@ export type OxygenQualitySummary = {
 
 export type StationFilters = {
   query: string;
+  areaFilter: AreaFilter;
   statusFilter: StatusFilter;
   purityFilter: HealthFilter;
   pressureFilter: HealthFilter;

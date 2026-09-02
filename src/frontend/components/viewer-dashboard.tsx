@@ -73,6 +73,7 @@ export function ViewerDashboard() {
     () =>
       getFilteredStations(enrichedStations, {
         query,
+        areaFilter: "all",
         statusFilter,
         purityFilter,
         pressureFilter,
@@ -121,8 +122,10 @@ export function ViewerDashboard() {
             </div>
           </section>
           <div className="mt-6">
-            <StationsTable
-              query={query}
+        <StationsTable
+          query={query}
+          areas={[]}
+          areaFilter="all"
               statusFilter={statusFilter}
               purityFilter={purityFilter}
               pressureFilter={pressureFilter}
@@ -132,7 +135,8 @@ export function ViewerDashboard() {
               currentPage={currentPage}
               pageCount={pageCount}
               rowsPerPage={rowsPerPage}
-              onQueryChange={(value) => resetPage(() => setQuery(value))}
+          onQueryChange={(value) => resetPage(() => setQuery(value))}
+          onAreaFilterChange={() => undefined}
               onStatusFilterChange={(value) => resetPage(() => setStatusFilter(value))}
               onPurityFilterChange={(value) => resetPage(() => setPurityFilter(value))}
               onPressureFilterChange={(value) => resetPage(() => setPressureFilter(value))}

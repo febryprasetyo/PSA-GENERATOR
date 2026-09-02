@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getDashboardSummary, getActiveStations, getAveragePurity, getOxygenQualitySummary, getOxygenQualityIssues } from '@/frontend/lib/dashboard-analytics';
+import { getDashboardSummary, getActiveStations, getAveragePurity, getOxygenQualitySummary, getOxygenQualityIssues, getFilteredStations } from '@/frontend/lib/dashboard-analytics';
 import type { StationWithMetrics } from '@/frontend/lib/types';
 
 // Mock data for testing
@@ -24,6 +24,8 @@ const mockStations: StationWithMetrics[] = [
     region: 'Jawa',
     lastUpdate: '2026-07-01T00:00:00Z',
     utilization: 80,
+    areaId: "area-1",
+    areaName: "Area 1",
   },
   {
     id: "ST-2",
@@ -45,6 +47,8 @@ const mockStations: StationWithMetrics[] = [
     region: 'Jawa',
     lastUpdate: '2026-07-01T00:00:00Z',
     utilization: 80,
+    areaId: "area-2",
+    areaName: "Area 2",
   },
   {
     id: "ST-3",
@@ -66,6 +70,8 @@ const mockStations: StationWithMetrics[] = [
     region: 'Jawa',
     lastUpdate: '2026-07-01T00:00:00Z',
     utilization: 0,
+    areaId: null,
+    areaName: null,
   }
 ];
 
@@ -114,5 +120,11 @@ describe('Dashboard Analytics Functions', () => {
     expect(summary.warning).toBe(1);
     expect(summary.critical).toBe(0);
     expect(summary.averageActivePurity).toBe(93.75);
+  });
+
+  it('getFilteredStations filters configured and unassigned Areas', () => {
+    const base = { query: "", statusFilter: "all", purityFilter: "all", pressureFilter: "all", sortKey: "hospitalName", sortDirection: "asc" } as const;
+    expect(getFilteredStations(mockStations, { ...base, areaFilter: "area-1" }).map((station) => station.id)).toEqual(["ST-1"]);
+    expect(getFilteredStations(mockStations, { ...base, areaFilter: "unassigned" }).map((station) => station.id)).toEqual(["ST-3"]);
   });
 });

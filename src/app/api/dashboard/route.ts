@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { db } from "@/backend/db";
-import { machines, masterHospitals, machineLatestReadings } from "@/backend/db/schema";
+import { machines, masterHospitals, machineLatestReadings, areaHospitals, areas } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
 import { eq, isNull, and } from "drizzle-orm";
 import { redis } from "@/backend/redis";
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await requireAuth();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
     const userRole = auth.payload?.role;
     const userClientId = auth.payload?.clientId;
+    const areaFilter = new URL(request.url).searchParams.get("areaId") || "all";
+    if (areaFilter !== "all" && areaFilter !== "unassigned") {
+      const [area] = await db.select({ id: areas.id }).from(areas).where(eq(areas.id, areaFilter)).limit(1);
+      if (!area) return NextResponse.json({ error: "Area tidak valid" }, { status: 400 });
+    }
 
     const baseQuery = db.select({
       id: machines.serialNumber, // Map serialNumber to id for frontend compatibility
@@ -31,20 +36,25 @@ export async function GET() {
       dbRunningTimeHours: machineLatestReadings.runningTimeHours,
       dbTerminalTime: machineLatestReadings.terminalTime,
       dbStartOfDayTotalFlow: machineLatestReadings.startOfDayTotalFlow,
+      areaId: areas.id,
+      areaName: areas.name,
     })
     .from(machines)
     .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
+    .leftJoin(areaHospitals, eq(masterHospitals.id, areaHospitals.hospitalId))
+    .leftJoin(areas, eq(areaHospitals.areaId, areas.id))
     .leftJoin(machineLatestReadings, eq(machines.id, machineLatestReadings.machineId));
 
     let allMachines;
 
+    const areaCondition = areaFilter === "all" ? undefined : areaFilter === "unassigned" ? isNull(areaHospitals.areaId) : eq(areaHospitals.areaId, areaFilter);
     if (userRole === "client") {
       if (!userClientId) {
         return NextResponse.json({ machines: [] });
       }
-      allMachines = await baseQuery.where(and(eq(machines.clientId, userClientId as string), isNull(machines.deletedAt)));
+      allMachines = await baseQuery.where(and(eq(machines.clientId, userClientId as string), isNull(machines.deletedAt), areaCondition));
     } else {
-      allMachines = await baseQuery.where(isNull(machines.deletedAt));
+      allMachines = await baseQuery.where(and(isNull(machines.deletedAt), areaCondition));
     }
 
     interface DashboardMachine {
@@ -64,6 +74,8 @@ export async function GET() {
       dbRunningTimeHours?: string | null;
       dbTerminalTime?: string | Date | null;
       lastSeenAt?: string | Date | null;
+      areaId?: string | null;
+      areaName?: string | null;
       [key: string]: unknown;
     }
 
@@ -102,6 +114,8 @@ export async function GET() {
         id: m.serialNumber,
         hospitalName: m.hospitalName || "Not Assigned",
         region: m.province ? (m.city ? `${m.city}, ${m.province}` : m.province) : (m.city || "Unknown Region"),
+        areaId: m.areaId || null,
+        areaName: m.areaName || null,
         capacityMcDay: m.capacityMcDay ? parseFloat(m.capacityMcDay as string) : 0,
         capacityMcMonth: m.capacityMcMonth ? parseFloat(m.capacityMcMonth as string) : 0,
         machineCount: 1,

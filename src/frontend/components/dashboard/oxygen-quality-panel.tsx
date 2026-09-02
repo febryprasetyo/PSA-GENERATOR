@@ -59,7 +59,7 @@ export function OxygenQualityPanel({
                 </div>
                 <div className="mt-2 h-1.5 rounded-full bg-white ring-1 ring-dashboard-border">
                   <div
-                    className={`h-full rounded-full ${station.purityLevel === "critical" ? "bg-dashboard-critical" : "bg-dashboard-warning"}`}
+                    className="h-full rounded-full bg-dashboard-warning"
                     style={{ width: `${purityWidth}%` }}
                   />
                 </div>

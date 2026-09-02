@@ -17,7 +17,7 @@ import {
   getOxygenQualitySummary,
   getStatusChart,
 } from "@/frontend/lib/dashboard-analytics";
-import type { HealthFilter, SortKey, SortDirection, StatusFilter } from "@/frontend/lib/dashboard-types";
+import type { AreaFilter, HealthFilter, SortKey, SortDirection, StatusFilter } from "@/frontend/lib/dashboard-types";
 import { enrichStation } from "@/frontend/lib/metrics";
 import { dashboardRoleProfiles } from "@/frontend/lib/role-profiles";
 import type { UserRole } from "@/shared/types";
@@ -26,12 +26,15 @@ import type { StationWithMetrics } from "@/frontend/lib/types";
 export function Dashboard() {
   const [stations, setStations] = useState<StationWithMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [areas, setAreas] = useState<{ id: string; name: string }[]>([]);
+  const [areaFilter, setAreaFilter] = useState<AreaFilter>("all");
   
   useEffect(() => {
     let isMounted = true;
     
     const fetchDashboardData = () => {
-      fetch(`/api/dashboard?t=${Date.now()}`, { cache: "no-store" })
+      const params = new URLSearchParams({ t: String(Date.now()), areaId: areaFilter });
+      fetch(`/api/dashboard?${params}`, { cache: "no-store" })
         .then(res => res.json())
         .then(data => {
           if (data.machines && isMounted) {
@@ -52,6 +55,10 @@ export function Dashboard() {
       isMounted = false;
       clearInterval(intervalId);
     };
+  }, [areaFilter]);
+
+  useEffect(() => {
+    fetch("/api/areas", { cache: "no-store" }).then((response) => response.ok ? response.json() : { areas: [] }).then((data) => setAreas(data.areas || [])).catch(console.error);
   }, []);
 
   const enrichedStations = useMemo(() => stations.map(enrichStation), [stations]);
@@ -77,13 +84,14 @@ export function Dashboard() {
     () =>
       getFilteredStations(enrichedStations, {
         query,
+        areaFilter,
         statusFilter,
         purityFilter,
         pressureFilter,
         sortKey,
         sortDirection,
       }),
-    [enrichedStations, pressureFilter, purityFilter, query, sortDirection, sortKey, statusFilter],
+    [areaFilter, enrichedStations, pressureFilter, purityFilter, query, sortDirection, sortKey, statusFilter],
   );
 
   const pageCount = Math.max(1, Math.ceil(filteredStations.length / rowsPerPage));
@@ -129,6 +137,8 @@ export function Dashboard() {
 
         <StationsTable
           query={query}
+          areas={areas}
+          areaFilter={areaFilter}
           statusFilter={statusFilter}
           purityFilter={purityFilter}
           pressureFilter={pressureFilter}
@@ -139,6 +149,7 @@ export function Dashboard() {
           pageCount={pageCount}
           rowsPerPage={rowsPerPage}
           onQueryChange={(value) => resetPage(() => setQuery(value))}
+          onAreaFilterChange={(value) => resetPage(() => setAreaFilter(value))}
           onStatusFilterChange={(value) => resetPage(() => setStatusFilter(value))}
           onPurityFilterChange={(value) => resetPage(() => setPurityFilter(value))}
           onPressureFilterChange={(value) => resetPage(() => setPressureFilter(value))}

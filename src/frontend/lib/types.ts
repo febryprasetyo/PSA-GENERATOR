@@ -20,6 +20,8 @@ export type Station = {
   status: MachineStatus;
   lastUpdate: string;
   region: string;
+  areaId?: string | null;
+  areaName?: string | null;
 };
 
 export type StationWithMetrics = Station & {

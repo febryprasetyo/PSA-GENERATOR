@@ -64,6 +64,7 @@ export function getFilteredStations(stations: StationWithMetrics[], filters: Sta
 
   return [...stations]
     .filter((station) => station.hospitalName.toLowerCase().includes(normalizedQuery) || station.id.toLowerCase().includes(normalizedQuery))
+    .filter((station) => filters.areaFilter === "all" || (filters.areaFilter === "unassigned" ? !station.areaId : station.areaId === filters.areaFilter))
     .filter((station) => filters.statusFilter === "all" || station.status === filters.statusFilter)
     .filter((station) => filters.purityFilter === "all" || station.purityLevel === filters.purityFilter)
     .filter((station) => filters.pressureFilter === "all" || station.pressureLevel === filters.pressureFilter)

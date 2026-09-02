@@ -1,9 +1,7 @@
 import type { HealthLevel, MachineStatus, Station, StationWithMetrics } from "@/frontend/lib/types";
 
 export function getPurityLevel(value: number): HealthLevel {
-  if (value < 90) return "critical";
-  if (value < 93) return "warning";
-  return "normal";
+  return value < 90 ? "critical" : "normal";
 }
 
 export function getPressureLevel(value: number): HealthLevel {
@@ -44,7 +42,6 @@ export function enrichStation(station: Station): StationWithMetrics {
   let healthScore = 100;
   if (station.status === "offline") healthScore -= 55;
   if (station.status === "warning") healthScore -= 18;
-  if (purityLevel === "warning") healthScore -= 15;
   if (purityLevel === "critical") healthScore -= 35;
   if (pressureLevel === "warning") healthScore -= 12;
   if (pressureLevel === "critical") healthScore -= 28;
@@ -55,7 +52,7 @@ export function enrichStation(station: Station): StationWithMetrics {
   const healthLevel: HealthLevel =
     boundedScore < 55 || station.status === "offline" || purityLevel === "critical" || pressureLevel === "critical"
       ? "critical"
-      : boundedScore < 80 || station.status === "warning" || purityLevel === "warning" || pressureLevel === "warning"
+      : boundedScore < 80 || station.status === "warning" || pressureLevel === "warning"
         ? "warning"
         : "normal";
 
