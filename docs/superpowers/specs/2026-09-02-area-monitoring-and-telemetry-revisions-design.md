@@ -1,7 +1,7 @@
 # Area Monitoring and Telemetry Revisions Design
 
-**Date:** 2026-09-02  
-**Status:** Approved in chat; awaiting written-spec review  
+**Date:** 2026-09-02
+**Status:** Approved in chat; awaiting written-spec review
 **Branch:** `feat/area-monitoring-revisions`
 
 ## 1. Objective

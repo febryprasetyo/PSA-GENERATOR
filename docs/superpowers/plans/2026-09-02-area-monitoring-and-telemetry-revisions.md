@@ -79,7 +79,7 @@ describe("Area schema", () => {
 
 - [ ] **Step 2: Run the test and verify missing exports fail**
 
-Run: `pnpm vitest run src/backend/__tests__/areaSchema.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/areaSchema.test.ts`
 Expected: FAIL because `areas` and `areaHospitals` are not exported.
 
 - [ ] **Step 3: Define additive tables and constraints**
@@ -116,7 +116,7 @@ Update Timescale setup SQL so production initialization preserves the same uniqu
 
 - [ ] **Step 4: Run focused test and typecheck schema usage**
 
-Run: `pnpm vitest run src/backend/__tests__/areaSchema.test.ts && pnpm exec tsc --noEmit`  
+Run: `pnpm vitest run src/backend/__tests__/areaSchema.test.ts && pnpm exec tsc --noEmit`
 Expected: PASS.
 
 - [ ] **Step 5: Commit schema changes**
@@ -169,7 +169,7 @@ Also test admin CRUD, 404 Area, invalid hospital ID, duplicate submitted IDs, an
 
 - [ ] **Step 2: Run API tests and verify route imports fail**
 
-Run: `pnpm vitest run src/backend/__tests__/areasApi.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/areasApi.test.ts`
 Expected: FAIL because Area routes do not exist.
 
 - [ ] **Step 3: Implement input normalization and Area list/create**
@@ -208,7 +208,7 @@ PUT membership permits `admin` and `operator`; metadata mutation and deletion pe
 
 - [ ] **Step 5: Run Area API tests and full backend suite**
 
-Run: `pnpm vitest run src/backend/__tests__/areasApi.test.ts src/backend/__tests__/auth.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/areasApi.test.ts src/backend/__tests__/auth.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Commit API slice**
@@ -256,7 +256,7 @@ Also verify member names, unassigned hospitals, move warning, loading/error stat
 
 - [ ] **Step 2: Run UI test and verify component import fails**
 
-Run: `pnpm vitest run src/frontend/__tests__/areas-page.test.tsx`  
+Run: `pnpm vitest run src/frontend/__tests__/areas-page.test.tsx`
 Expected: FAIL because `AreasPage` does not exist.
 
 - [ ] **Step 3: Add route and sidebar entry**
@@ -279,7 +279,7 @@ Fetch Areas and `/api/clients?limit=1000`. Render checkboxes/search results, sho
 
 - [ ] **Step 6: Run UI tests and lint touched files**
 
-Run: `pnpm vitest run src/frontend/__tests__/areas-page.test.tsx && pnpm eslint src/app/areas src/frontend/components/pages/areas-page.tsx src/frontend/components/modals/area-modal.tsx src/frontend/components/modals/area-members-modal.tsx src/frontend/components/layout/sidebar.tsx src/frontend/lib/routes.ts`  
+Run: `pnpm vitest run src/frontend/__tests__/areas-page.test.tsx && pnpm eslint src/app/areas src/frontend/components/pages/areas-page.tsx src/frontend/components/modals/area-modal.tsx src/frontend/components/modals/area-members-modal.tsx src/frontend/components/layout/sidebar.tsx src/frontend/lib/routes.ts`
 Expected: PASS.
 
 - [ ] **Step 7: Commit UI slice**
@@ -323,7 +323,7 @@ expect(getFilteredStations(stations, {
 
 - [ ] **Step 3: Run tests and verify failures**
 
-Run: `pnpm vitest run src/backend/__tests__/dashboardAreaFilter.test.ts src/frontend/__tests__/dashboard-analytics.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/dashboardAreaFilter.test.ts src/frontend/__tests__/dashboard-analytics.test.ts`
 Expected: FAIL because Area fields/filter are absent.
 
 - [ ] **Step 4: Extend dashboard API**
@@ -336,7 +336,7 @@ Fetch `/api/areas`, store `areaFilter`, pass it to dashboard API and table filte
 
 - [ ] **Step 6: Run focused tests**
 
-Run: `pnpm vitest run src/backend/__tests__/dashboardAreaFilter.test.ts src/frontend/__tests__/dashboard-analytics.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/dashboardAreaFilter.test.ts src/frontend/__tests__/dashboard-analytics.test.ts`
 Expected: PASS.
 
 - [ ] **Step 7: Commit dashboard Area slice**
@@ -379,7 +379,7 @@ Remove the mocked old three-band purity implementation from `deriveMachineStatus
 
 - [ ] **Step 2: Run purity tests and verify 90 currently fails**
 
-Run: `pnpm vitest run src/backend/__tests__/purityLevel.test.ts src/backend/__tests__/deriveMachineStatus.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/purityLevel.test.ts src/backend/__tests__/deriveMachineStatus.test.ts`
 Expected: FAIL for values between the old warning and normal thresholds.
 
 - [ ] **Step 3: Implement the two-level rule across calculations**
@@ -398,7 +398,7 @@ Use labels `MC/day (Nm³)`, `MC/bulan (Nm³)`, `Flow Meter 1 (Nm³/h)`, `Flow Me
 
 - [ ] **Step 5: Run purity/frontend tests**
 
-Run: `pnpm vitest run src/backend/__tests__/purityLevel.test.ts src/backend/__tests__/deriveMachineStatus.test.ts src/frontend/__tests__/dashboard-analytics.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/purityLevel.test.ts src/backend/__tests__/deriveMachineStatus.test.ts src/frontend/__tests__/dashboard-analytics.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Commit classification and units**
@@ -441,7 +441,7 @@ Mock Redis rename/processing keys and DB insert. Verify a successful insert dele
 
 - [ ] **Step 3: Run aggregation tests and verify failures**
 
-Run: `pnpm vitest run src/backend/__tests__/intervalAggregation.test.ts src/backend/__tests__/listenerAggregation.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/intervalAggregation.test.ts src/backend/__tests__/listenerAggregation.test.ts`
 Expected: FAIL because ten-minute helpers do not exist.
 
 - [ ] **Step 4: Implement pure aggregation helpers**
@@ -466,7 +466,7 @@ Calculate delay as `TEN_MINUTES_MS - (Date.now() % TEN_MINUTES_MS)`, run the fir
 
 - [ ] **Step 7: Run aggregation tests**
 
-Run: `pnpm vitest run src/backend/__tests__/intervalAggregation.test.ts src/backend/__tests__/listenerAggregation.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/intervalAggregation.test.ts src/backend/__tests__/listenerAggregation.test.ts`
 Expected: PASS.
 
 - [ ] **Step 8: Commit logger change**
@@ -511,7 +511,7 @@ Mock a represented single-machine hospital and assert no SN header/cells; mock m
 
 - [ ] **Step 3: Run export tests and verify failures**
 
-Run: `pnpm vitest run src/backend/__tests__/exportAggregation.test.ts src/backend/__tests__/exportApi.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/exportAggregation.test.ts src/backend/__tests__/exportApi.test.ts`
 Expected: FAIL because helpers and grouped query are absent.
 
 - [ ] **Step 4: Implement grouped PostgreSQL query**
@@ -534,7 +534,7 @@ Use header label `Interval Mulai (30 Menit)`, add `export:v2:30m` to the Redis k
 
 - [ ] **Step 7: Run export tests**
 
-Run: `pnpm vitest run src/backend/__tests__/exportAggregation.test.ts src/backend/__tests__/exportApi.test.ts`  
+Run: `pnpm vitest run src/backend/__tests__/exportAggregation.test.ts src/backend/__tests__/exportApi.test.ts`
 Expected: PASS.
 
 - [ ] **Step 8: Commit export slice**
@@ -577,7 +577,7 @@ it("keeps the modal open and displays the server error", async () => {
 
 - [ ] **Step 3: Run tests and verify blank-name/API behavior fails**
 
-Run: `pnpm vitest run src/backend/__tests__/clientsApi.test.ts src/frontend/__tests__/client-modal.test.tsx`  
+Run: `pnpm vitest run src/backend/__tests__/clientsApi.test.ts src/frontend/__tests__/client-modal.test.tsx`
 Expected: FAIL on trimmed blank validation or missing test labels.
 
 - [ ] **Step 4: Implement minimal hardening**
@@ -586,7 +586,7 @@ Normalize `hospitalName` with `typeof hospitalName === "string" ? hospitalName.t
 
 - [ ] **Step 5: Run tests and commit**
 
-Run: `pnpm vitest run src/backend/__tests__/clientsApi.test.ts src/frontend/__tests__/client-modal.test.tsx`  
+Run: `pnpm vitest run src/backend/__tests__/clientsApi.test.ts src/frontend/__tests__/client-modal.test.tsx`
 Expected: PASS.
 
 ```bash
@@ -612,22 +612,22 @@ Document `pnpm run db:push` before application rollout, Area assignment behavior
 
 - [ ] **Step 2: Run the complete automated suite**
 
-Run: `pnpm test`  
+Run: `pnpm test`
 Expected: all test files pass with zero failures.
 
 - [ ] **Step 3: Run lint**
 
-Run: `pnpm lint`  
+Run: `pnpm lint`
 Expected: exit 0 with no errors.
 
 - [ ] **Step 4: Run production build**
 
-Run: `pnpm build`  
+Run: `pnpm build`
 Expected: exit 0 and all Area/API pages compile.
 
 - [ ] **Step 5: Inspect worktree and migration diff**
 
-Run: `git status --short && git diff master...HEAD --check && git diff master...HEAD --stat`  
+Run: `git status --short && git diff master...HEAD --check && git diff master...HEAD --stat`
 Expected: only intended files, no whitespace errors, no `.env`, build output, or dependency directory tracked.
 
 - [ ] **Step 6: Perform manual smoke verification against a non-production database**
@@ -643,6 +643,6 @@ git commit -m "docs: document area and telemetry revisions"
 
 - [ ] **Step 8: Record final verification evidence**
 
-Run: `git log --oneline master..HEAD && git status --short --branch`  
+Run: `git log --oneline master..HEAD && git status --short --branch`
 Expected: task commits are present and the feature worktree is clean.
 
