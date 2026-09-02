@@ -7,6 +7,7 @@ import { machines, machineReadings, machineLatestReadings } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { redis } from "../redis";
 import { isAutoRegisterSn, getRedisKey, getBrandName } from "../../shared/config";
+import { averageSamples, getTenMinuteBucketStart, type BufferedSample } from "./intervalAggregation";
 
 let MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || (process.env.MQTT_HOST ? `mqtt://${process.env.MQTT_HOST}:1883` : "mqtt://localhost:1883");
 if (MQTT_BROKER_URL && !MQTT_BROKER_URL.startsWith("mqtt://") && !MQTT_BROKER_URL.startsWith("mqtts://") && !MQTT_BROKER_URL.startsWith("ws://") && !MQTT_BROKER_URL.startsWith("wss://")) {
@@ -155,7 +156,7 @@ async function startListener() {
         console.error("[MQTT] Error fetching latest reading for startOfDay logic:", err);
       }
 
-      // 2c. Buffer reading into Redis for hourly averaging (machineReadings inserted once every 1 hour)
+      // 2c. Buffer reading for aligned ten-minute historical averages.
       const sampleData = {
         machineId,
         clientId,
@@ -172,8 +173,8 @@ async function startListener() {
         rawPayload: payload,
       };
 
-      await redis.rpush(getRedisKey(`machine:hourly_samples:${serialNumber}`), JSON.stringify(sampleData));
-      await redis.sadd(getRedisKey("machine:hourly_active_serials"), serialNumber);
+      await redis.rpush(getRedisKey(`machine:ten_minute_samples:${serialNumber}`), JSON.stringify(sampleData));
+      await redis.sadd(getRedisKey("machine:ten_minute_active_serials"), serialNumber);
 
       const latestDataForUpsert = {
         ...readingData,
@@ -206,18 +207,21 @@ async function startListener() {
     }
   });
 
-  // Schedule hourly flush every 1 hour (3600000 ms)
-  const HOURLY_INTERVAL_MS = 60 * 60 * 1000;
-  const intervalId = setInterval(async () => {
-    await flushHourlyReadings();
-  }, HOURLY_INTERVAL_MS);
+  const TEN_MINUTES_MS = 10 * 60 * 1000;
+  let intervalId: NodeJS.Timeout | undefined;
+  const firstDelay = TEN_MINUTES_MS - (Date.now() % TEN_MINUTES_MS);
+  const boundaryTimeout = setTimeout(async () => {
+    await flushTenMinuteReadings(new Date(Date.now() - TEN_MINUTES_MS));
+    intervalId = setInterval(() => void flushTenMinuteReadings(new Date(Date.now() - TEN_MINUTES_MS)), TEN_MINUTES_MS);
+  }, firstDelay);
 
   // Handle graceful shutdown
   const handleShutdown = async (signal: string) => {
     console.log(`[MQTT] ${signal} received. Flushing buffer and disconnecting...`);
-    clearInterval(intervalId);
+    clearTimeout(boundaryTimeout);
+    if (intervalId) clearInterval(intervalId);
     client.end();
-    await flushHourlyReadings();
+    await flushTenMinuteReadings(new Date());
     process.exit(0);
   };
 
@@ -225,28 +229,25 @@ async function startListener() {
   process.on("SIGTERM", () => handleShutdown("SIGTERM"));
 }
 
-export async function flushHourlyReadings() {
-  console.log("[MQTT Aggregator] Flushing hourly readings to PostgreSQL...");
+export async function flushTenMinuteReadings(intervalDate = new Date()) {
+  const bucketStart = getTenMinuteBucketStart(intervalDate);
+  console.log(`[MQTT Aggregator] Flushing ten-minute readings for ${bucketStart.toISOString()}...`);
   try {
-    const activeSerials = await redis.smembers(getRedisKey("machine:hourly_active_serials"));
+    const activeSetKey = getRedisKey("machine:ten_minute_active_serials");
+    const activeSerials = await redis.smembers(activeSetKey);
     if (!activeSerials || activeSerials.length === 0) {
       console.log("[MQTT Aggregator] No active machine samples to flush.");
       return;
     }
 
     for (const serialNumber of activeSerials) {
-      const listKey = getRedisKey(`machine:hourly_samples:${serialNumber}`);
-      
-      const pipeline = redis.pipeline();
-      pipeline.lrange(listKey, 0, -1);
-      pipeline.del(listKey);
-      pipeline.srem(getRedisKey("machine:hourly_active_serials"), serialNumber);
-
-
-      const results = await pipeline.exec();
-      if (!results) continue;
-
-      const rawSamples = (results[0]?.[1] as string[]) || [];
+      const listKey = getRedisKey(`machine:ten_minute_samples:${serialNumber}`);
+      const processingKey = getRedisKey(`machine:ten_minute_processing:${serialNumber}:${bucketStart.toISOString()}`);
+      if (!(await redis.exists(processingKey))) {
+        if (!(await redis.exists(listKey))) continue;
+        await redis.rename(listKey, processingKey);
+      }
+      const rawSamples = await redis.lrange(processingKey, 0, -1);
       if (rawSamples.length === 0) continue;
 
       const samples = rawSamples
@@ -257,53 +258,27 @@ export async function flushHourlyReadings() {
             return null;
           }
         })
-        .filter(Boolean);
+        .filter((sample): sample is BufferedSample => Boolean(sample));
 
       if (samples.length === 0) continue;
 
-      const calcAvg = (key: string): string | null => {
-        let sum = 0;
-        let count = 0;
-        for (const sample of samples) {
-          const val = sample[key];
-          if (val !== null && val !== undefined && val !== "") {
-            const num = Number(val);
-            if (!isNaN(num)) {
-              sum += num;
-              count++;
-            }
-          }
-        }
-        return count > 0 ? (sum / count).toFixed(2) : null;
-      };
-
-      const lastSample = samples[samples.length - 1];
-
-      const averageReading = {
-        machineId: lastSample.machineId,
-        clientId: lastSample.clientId,
-        serialNumber: lastSample.serialNumber,
-        terminalTime: new Date(lastSample.terminalTime || Date.now()),
-        receivedAt: new Date(),
-        groupName: lastSample.groupName || null,
-        oxygenPurity: calcAvg("oxygenPurity"),
-        tankPressure: calcAvg("tankPressure"),
-        flowSentral: calcAvg("flowSentral"),
-        flowBooster: calcAvg("flowBooster"),
-        totalFlow: calcAvg("totalFlow"),
-        runningTimeHours: calcAvg("runningTimeHours"),
-        mqttTopic: lastSample.mqttTopic,
-        rawPayload: lastSample.rawPayload,
-      };
+      const averageReading = averageSamples(samples, bucketStart);
 
       if (averageReading.clientId) {
-        await db.insert(machineReadings).values(averageReading);
-        console.log(`[MQTT Aggregator] Saved hourly average for ${serialNumber} (${samples.length} samples aggregated).`);
+        await db.insert(machineReadings).values(averageReading).onConflictDoNothing({
+          target: [machineReadings.machineId, machineReadings.terminalTime],
+        });
+        console.log(`[MQTT Aggregator] Saved ten-minute average for ${serialNumber} (${samples.length} samples).`);
       }
+      await redis.del(processingKey);
+      if (!(await redis.exists(listKey))) await redis.srem(activeSetKey, serialNumber);
     }
   } catch (err) {
-    console.error("[MQTT Aggregator] Error flushing hourly readings:", err);
+    console.error("[MQTT Aggregator] Error flushing ten-minute readings:", err);
   }
 }
+
+/** @deprecated Compatibility export for older callers during rollout. */
+export const flushHourlyReadings = flushTenMinuteReadings;
 
 startListener().catch(console.error);
