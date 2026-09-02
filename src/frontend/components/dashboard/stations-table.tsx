@@ -44,6 +44,7 @@ export function StationsTable({
   onRowsPerPageChange,
   onPageChange,
   onSort,
+  showAreaFilter = true,
 }: {
   query: string;
   areas: { id: string; name: string }[];
@@ -65,6 +66,7 @@ export function StationsTable({
   onRowsPerPageChange: (value: number) => void;
   onPageChange: (value: number | ((current: number) => number)) => void;
   onSort: (key: SortKey) => void;
+  showAreaFilter?: boolean;
 }) {
   return (
     <div className="panel mt-5 overflow-hidden">
@@ -76,7 +78,7 @@ export function StationsTable({
               Menampilkan {formatNumber(visibleStations.length)} dari {formatNumber(filteredCount)} stasiun. Untuk 100+ mesin, data dibagi halaman agar cepat dibaca dan tetap ringan.
             </p>
           </div>
-          <div className="grid gap-2 md:grid-cols-[minmax(240px,1.25fr)_repeat(4,minmax(155px,0.75fr))]">
+          <div className={`grid gap-2 ${showAreaFilter ? "md:grid-cols-[minmax(240px,1.25fr)_repeat(4,minmax(155px,0.75fr))]" : "md:grid-cols-[minmax(240px,1.25fr)_repeat(3,minmax(155px,0.75fr))]"}`}>
             <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
@@ -86,11 +88,11 @@ export function StationsTable({
                 className="h-10 w-full rounded-md border border-dashboard-border bg-white pl-9 pr-3 text-sm outline-none transition focus:border-dashboard-primary focus:ring-2 focus:ring-blue-100"
               />
             </div>
-            <FilterSelect icon={MapPin} value={areaFilter} onChange={(value) => onAreaFilterChange(value as AreaFilter)}>
+            {showAreaFilter && <FilterSelect icon={MapPin} value={areaFilter} onChange={(value) => onAreaFilterChange(value as AreaFilter)}>
               <option value="all">Semua Area</option>
               {areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}
               <option value="unassigned">Belum Memiliki Area</option>
-            </FilterSelect>
+            </FilterSelect>}
             <FilterSelect icon={SlidersHorizontal} value={statusFilter} onChange={(value) => onStatusFilterChange(value as StatusFilter)}>
               <option value="all">Semua status</option>
               <option value="online">Menyala</option>
@@ -130,7 +132,7 @@ export function StationsTable({
           </thead>
           <tbody>
             {visibleStations.map((station) => (
-              <StationRow key={station.id} station={station} />
+              <StationRow key={station.id} station={station} showArea={showAreaFilter} />
             ))}
           </tbody>
         </table>
@@ -176,7 +178,7 @@ export function StationsTable({
   );
 }
 
-function StationRow({ station }: { station: StationWithMetrics }) {
+function StationRow({ station, showArea }: { station: StationWithMetrics; showArea: boolean }) {
   const StatusIcon = station.status === "online" ? CircleCheck : station.status === "offline" ? CircleX : TriangleAlert;
   const utilizationLevel: HealthLevel = station.utilization > 100 ? "critical" : station.utilization >= 85 || station.utilization < 30 ? "warning" : "normal";
 
@@ -190,7 +192,7 @@ function StationRow({ station }: { station: StationWithMetrics }) {
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-dashboard-text">{station.hospitalName}</p>
             <p className="mt-1 text-xs text-dashboard-muted">
-              {station.id} | {station.areaName || "Belum Memiliki Area"} | {station.region} | {station.machineCount} mesin | {station.runningTimeHours ? formatNumber(station.runningTimeHours) : 0} jam | Sync: {new Date(station.lastUpdate).toLocaleTimeString("id-ID")}
+              {station.id} | {showArea && <>{station.areaName || "Belum Memiliki Area"} | </>}{station.region} | {station.machineCount} mesin | {station.runningTimeHours ? formatNumber(station.runningTimeHours) : 0} jam | Sync: {new Date(station.lastUpdate).toLocaleTimeString("id-ID")}
             </p>
           </div>
         </div>

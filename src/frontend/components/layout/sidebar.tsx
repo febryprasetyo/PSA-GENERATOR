@@ -1,12 +1,9 @@
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, ChevronLeft, LayoutDashboard, Database, History, MapPin, Users, Settings, Wrench, FileText, Hospital, Sparkles } from "lucide-react";
+import { LogOut, ChevronLeft, LayoutDashboard, Database, History, MapPin, Users, Settings, Wrench, FileText, Hospital } from "lucide-react";
 import { appRoutes } from "@/frontend/lib/routes";
 import { useAuth } from "@/frontend/hooks/useAuth";
 import type { UserRole } from "@/shared/types";
-import { CURRENT_VERSION } from "@/shared/changelog";
-import { ChangelogModal } from "@/frontend/components/modals/changelog-modal";
 import { useBrand } from "@/frontend/hooks/useBrand";
 
 interface SidebarProps {
@@ -19,7 +16,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const { user, logout } = useAuth();
   const brand = useBrand();
   const role = (user?.role as UserRole) || "client";
-  const [isChangelogOpen, setIsChangelogOpen] = useState(false);
 
   const isRedTheme = brand.brandColor === "red" || brand.brandColor === "#DC2626";
 
@@ -66,11 +62,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   return (
     <>
-      <ChangelogModal
-        isOpen={isChangelogOpen}
-        onClose={() => setIsChangelogOpen(false)}
-      />
-
       <aside
         className={`relative flex flex-col border-r border-dashboard-border bg-white transition-all duration-300 ${
           collapsed ? "w-[72px]" : "w-64"
@@ -118,26 +109,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
         {/* Sidebar Footer */}
         <div className="shrink-0 border-t border-dashboard-border p-4 space-y-2">
-          {/* Version / Changelog Trigger Button */}
-          <button
-            type="button"
-            onClick={() => setIsChangelogOpen(true)}
-            className={`flex w-full items-center gap-2 rounded-md bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-dashboard-primary hover:border-blue-200 transition ${
-              collapsed ? "justify-center" : ""
-            }`}
-            title={collapsed ? `Changelog (${CURRENT_VERSION})` : undefined}
-          >
-            <Sparkles size={16} className="text-blue-500 shrink-0" />
-            {!collapsed && (
-              <div className="flex items-center justify-between w-full">
-                <span>System Updates</span>
-                <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
-                  {CURRENT_VERSION}
-                </span>
-              </div>
-            )}
-          </button>
-
           <button
             onClick={logout}
             className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 transition ${collapsed ? "justify-center" : ""}`}

@@ -35,3 +35,7 @@ export const dashboardRoleProfiles: Record<UserRole, DashboardRoleProfile> = {
     icon: Eye,
   },
 };
+
+export function canViewInternalArea(role?: string) {
+  return role === "admin" || role === "operator";
+}

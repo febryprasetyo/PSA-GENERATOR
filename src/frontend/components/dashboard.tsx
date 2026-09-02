@@ -19,11 +19,14 @@ import {
 } from "@/frontend/lib/dashboard-analytics";
 import type { AreaFilter, HealthFilter, SortKey, SortDirection, StatusFilter } from "@/frontend/lib/dashboard-types";
 import { enrichStation } from "@/frontend/lib/metrics";
-import { dashboardRoleProfiles } from "@/frontend/lib/role-profiles";
+import { canViewInternalArea } from "@/frontend/lib/role-profiles";
 import type { UserRole } from "@/shared/types";
 import type { StationWithMetrics } from "@/frontend/lib/types";
 
 export function Dashboard() {
+  const { user } = useAuth();
+  const role = user?.role || "viewer";
+  const showArea = canViewInternalArea(role);
   const [stations, setStations] = useState<StationWithMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [areas, setAreas] = useState<{ id: string; name: string }[]>([]);
@@ -58,12 +61,15 @@ export function Dashboard() {
   }, [areaFilter]);
 
   useEffect(() => {
+    if (!showArea) {
+      setAreas([]);
+      setAreaFilter("all");
+      return;
+    }
     fetch("/api/areas", { cache: "no-store" }).then((response) => response.ok ? response.json() : { areas: [] }).then((data) => setAreas(data.areas || [])).catch(console.error);
-  }, []);
+  }, [showArea]);
 
   const enrichedStations = useMemo(() => stations.map(enrichStation), [stations]);
-  const { user } = useAuth();
-  const role = user?.role || "viewer";
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [purityFilter, setPurityFilter] = useState<HealthFilter>("all");
@@ -156,6 +162,7 @@ export function Dashboard() {
           onRowsPerPageChange={(value) => resetPage(() => setRowsPerPage(value))}
           onPageChange={setPage}
           onSort={handleSort}
+          showAreaFilter={showArea}
         />
         </>
       )}
