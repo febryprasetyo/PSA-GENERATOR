@@ -47,6 +47,7 @@ export function PageHeader({ title, subtitle, showLogout, variant = "default", c
       </div>
 
       <div className="flex items-center gap-6">
+        {children && <div>{children}</div>}
         <div className="flex items-center gap-3 border-l border-slate-600 pl-6">
           <div className="hidden text-right sm:block">
             <p className="text-xs text-slate-300">Selamat datang,</p>

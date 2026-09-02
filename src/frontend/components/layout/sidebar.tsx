@@ -32,6 +32,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     { label: "User", href: appRoutes.users, icon: Users, roles: ["admin", "operator"] },
     { label: "Mesin", href: appRoutes.devices, icon: Settings, roles: ["admin", "operator"] },
     { label: "Rumah Sakit", href: appRoutes.clients, icon: Hospital, roles: ["admin", "operator"] },
+    { label: "Area", href: appRoutes.areas, icon: MapPin, roles: ["admin", "operator"] },
   ];
 
   const renderMenu = (items: { label: string; href: string; icon: React.ElementType; roles: string[] }[]) => {

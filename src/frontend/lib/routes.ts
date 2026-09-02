@@ -9,6 +9,7 @@ export const appRoutes = {
   users: "/users",
   devices: "/devices",
   clients: "/clients",
+  areas: "/areas",
   database: "/database",
 } as const;
 
