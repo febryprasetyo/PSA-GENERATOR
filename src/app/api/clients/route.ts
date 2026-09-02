@@ -87,13 +87,14 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { hospitalName, province, city, address, owner, kelas } = body;
+    const normalizedHospitalName = typeof hospitalName === "string" ? hospitalName.trim() : "";
 
-    if (!hospitalName) {
+    if (!normalizedHospitalName) {
       return NextResponse.json({ error: "Nama Rumah Sakit wajib diisi" }, { status: 400 });
     }
 
     const [newHospital] = await db.insert(masterHospitals).values({
-      hospitalName,
+      hospitalName: normalizedHospitalName,
       province,
       city,
       address,
