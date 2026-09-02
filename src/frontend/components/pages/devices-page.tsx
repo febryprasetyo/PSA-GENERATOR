@@ -7,6 +7,7 @@ import { useAuth } from "@/frontend/hooks/useAuth";
 import { Edit2, Trash2, Plus, AlertTriangle, Check, X, RefreshCw, Unplug } from "lucide-react";
 
 import { canShowMachineSync } from "@/frontend/lib/machine-sync";
+import { FeedbackToast, type ToastTone } from "@/frontend/components/ui/feedback-toast";
 
 const statusOptions = ["all", "online", "offline", "warning"] as const;
 
@@ -31,6 +32,7 @@ export default function DevicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState<{ message: string; tone: ToastTone } | null>(null);
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<typeof statusOptions[number]>("all");
@@ -85,10 +87,13 @@ export default function DevicesPage() {
       const res = await fetch("/api/machines/sync", { method: "POST" });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Failed to sync machines");
-      alert(`Berhasil sinkronisasi. ${result.syncedCount} mesin baru ditambahkan.`);
+      setToast({
+        message: `Berhasil sinkronisasi. ${result.syncedCount} mesin baru ditambahkan.`,
+        tone: result.syncedCount > 0 ? "success" : "info",
+      });
       fetchMachines();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err));
+      setToast({ message: err instanceof Error ? err.message : String(err), tone: "error" });
     } finally {
       setIsSyncing(false);
     }
@@ -377,6 +382,7 @@ export default function DevicesPage() {
         onSave={handleSaveMachine}
         machine={selectedMachine || undefined}
       />
+      {toast && <FeedbackToast {...toast} onClose={() => setToast(null)} />}
     </div>
   );
 }
