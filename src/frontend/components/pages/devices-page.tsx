@@ -6,7 +6,7 @@ import { MachineModal } from "@/frontend/components/modals/machine-modal";
 import { useAuth } from "@/frontend/hooks/useAuth";
 import { Edit2, Trash2, Plus, AlertTriangle, Check, X, RefreshCw, Unplug } from "lucide-react";
 
-import { useBrand } from "@/frontend/hooks/useBrand";
+import { canShowMachineSync } from "@/frontend/lib/machine-sync";
 
 const statusOptions = ["all", "online", "offline", "warning"] as const;
 
@@ -27,7 +27,6 @@ interface MachineData {
 
 export default function DevicesPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
-  const brand = useBrand();
   const [machines, setMachines] = useState<MachineData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -200,7 +199,7 @@ export default function DevicesPage() {
             </div>
             
             <div className="flex flex-wrap gap-2">
-              {currentUser?.role === "admin" && brand.autoRegisterSn && (
+              {canShowMachineSync(currentUser?.role) && (
                 <button
                   onClick={handleSync}
                   disabled={isSyncing}

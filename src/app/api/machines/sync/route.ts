@@ -4,7 +4,7 @@ import { machines } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
 import { redis } from "@/backend/redis";
 import { eq } from "drizzle-orm";
-import { isAutoRegisterSn, getRedisPrefix } from "@/shared/config";
+import { getRedisPrefix } from "@/shared/config";
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -31,18 +31,15 @@ export async function POST(request: Request) {
       // 2. Check if it exists in DB
       const existing = await db.select({ id: machines.id, deletedAt: machines.deletedAt }).from(machines).where(eq(machines.serialNumber, serialNumber)).limit(1);
 
-      // 3. If not exists, insert it ONLY IF AUTO_REGISTER_SN is enabled
+      // 3. Manual admin sync is independent from listener auto-registration.
       if (existing.length === 0) {
-        if (isAutoRegisterSn()) {
-
-          await db.insert(machines).values({
-            serialNumber,
-            machineName: `Auto-Synced (${serialNumber})`,
-            status: "online",
-            lastSeenAt: new Date(),
-          });
-          syncedCount++;
-        }
+        await db.insert(machines).values({
+          serialNumber,
+          machineName: `Auto-Synced (${serialNumber})`,
+          status: "online",
+          lastSeenAt: new Date(),
+        });
+        syncedCount++;
       } else if (existing[0].deletedAt !== null) {
 
         // If it exists but was soft deleted, undelete it

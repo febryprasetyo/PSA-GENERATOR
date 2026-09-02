@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MapPin, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { MapPin, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { PageHeader } from "@/frontend/components/layout/page-header";
 import { useAuth } from "@/frontend/hooks/useAuth";
 
@@ -21,19 +21,20 @@ export function AreasPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [hospitalQuery, setHospitalQuery] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [areaResponse, hospitalResponse] = await Promise.all([
         fetch("/api/areas", { cache: "no-store" }),
-        fetch("/api/clients?limit=1000&sortBy=hospitalName&sortOrder=asc", { cache: "no-store" }),
+        fetch("/api/areas/candidates", { cache: "no-store" }),
       ]);
       const areaData = await areaResponse.json();
       const hospitalData = await hospitalResponse.json();
       if (!areaResponse.ok) throw new Error(areaData.error || "Gagal memuat Area");
       setAreas(areaData.areas || []);
-      setHospitals(hospitalData.clients || []);
+      setHospitals(hospitalData.hospitals || []);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Gagal memuat data");
     } finally {
@@ -44,6 +45,10 @@ export function AreasPage() {
   useEffect(() => { void load(); }, [load]);
 
   const ownerByHospital = useMemo(() => new Map(areas.flatMap((area) => area.hospitals.map((item) => [item.hospitalId, area.name]))), [areas]);
+  const filteredHospitals = useMemo(() => {
+    const query = hospitalQuery.trim().toLowerCase();
+    return hospitals.filter((hospital) => hospital.hospitalName.toLowerCase().includes(query));
+  }, [hospitalQuery, hospitals]);
 
   async function saveArea(event: React.FormEvent) {
     event.preventDefault();
@@ -89,12 +94,12 @@ export function AreasPage() {
       {loading ? <p className="p-8 text-center text-dashboard-muted">Memuat Area...</p> : <div className="divide-y divide-dashboard-border">
         {areas.map((area) => <div key={area.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-3"><div className="rounded-md bg-blue-50 p-3 text-dashboard-primary"><MapPin size={20} /></div><div><h2 className="font-bold">{area.name}</h2><p className="text-sm text-dashboard-muted">{area.description || "Tanpa deskripsi"}</p><p className="mt-1 text-xs text-slate-500">{area.hospitalCount} RS · {area.hospitals.map((item) => item.hospitalName).join(", ") || "Belum ada anggota"}</p></div></div>
-          <div className="flex gap-2"><button aria-label={`Atur anggota ${area.name}`} onClick={() => { setMembersArea(area); setSelected(area.hospitals.map((item) => item.hospitalId)); }} className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm"><Users size={15} />Atur Anggota</button>{isAdmin && <><button aria-label={`Edit ${area.name}`} onClick={() => { setEditing(area); setName(area.name); setDescription(area.description || ""); }} className="rounded border p-2"><Pencil size={15} /></button><button aria-label={`Hapus ${area.name}`} onClick={() => void removeArea(area)} className="rounded border p-2 text-red-600"><Trash2 size={15} /></button></>}</div>
+          <div className="flex gap-2"><button aria-label={`Atur anggota ${area.name}`} onClick={() => { setMembersArea(area); setSelected(area.hospitals.map((item) => item.hospitalId)); setHospitalQuery(""); }} className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm"><Users size={15} />Atur Anggota</button>{isAdmin && <><button aria-label={`Edit ${area.name}`} onClick={() => { setEditing(area); setName(area.name); setDescription(area.description || ""); }} className="rounded border p-2"><Pencil size={15} /></button><button aria-label={`Hapus ${area.name}`} onClick={() => void removeArea(area)} className="rounded border p-2 text-red-600"><Trash2 size={15} /></button></>}</div>
         </div>)}
         {!areas.length && <p className="p-8 text-center text-dashboard-muted">Belum ada Area.</p>}
       </div>}
     </div>
     {editing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"><form onSubmit={saveArea} className="w-full max-w-md rounded-xl bg-white p-6"><div className="mb-4 flex justify-between"><h2 className="text-lg font-bold">{editing === "new" ? "Tambah Area" : "Edit Area"}</h2><button type="button" onClick={() => setEditing(null)}><X /></button></div><label htmlFor="area-name" className="text-sm font-medium">Nama Area</label><input id="area-name" required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 mb-4 w-full rounded border p-2"/><label htmlFor="area-description" className="text-sm font-medium">Deskripsi</label><textarea id="area-description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full rounded border p-2"/><button className="mt-5 w-full rounded bg-dashboard-primary p-2 font-semibold text-white">Simpan</button></form></div>}
-    {membersArea && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"><div className="max-h-[80vh] w-full max-w-lg overflow-auto rounded-xl bg-white p-6"><div className="mb-4 flex justify-between"><h2 className="text-lg font-bold">Anggota {membersArea.name}</h2><button onClick={() => setMembersArea(null)}><X /></button></div><div className="space-y-2">{hospitals.map((hospital) => { const owner = ownerByHospital.get(hospital.id); return <label key={hospital.id} className="flex items-start gap-3 rounded border p-3"><input type="checkbox" checked={selected.includes(hospital.id)} onChange={(e) => setSelected((current) => e.target.checked ? [...current, hospital.id] : current.filter((id) => id !== hospital.id))}/><span><span className="block text-sm font-medium">{hospital.hospitalName}</span>{owner && owner !== membersArea.name && <span className="text-xs text-amber-600">Akan dipindahkan dari {owner}</span>}</span></label>; })}</div><button onClick={() => void saveMembers()} className="mt-5 w-full rounded bg-dashboard-primary p-2 font-semibold text-white">Simpan Anggota</button></div></div>}
+    {membersArea && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"><div className="max-h-[80vh] w-full max-w-lg overflow-auto rounded-xl bg-white p-6"><div className="mb-4 flex justify-between"><h2 className="text-lg font-bold">Anggota {membersArea.name}</h2><button onClick={() => setMembersArea(null)}><X /></button></div><div className="relative mb-3"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/><input value={hospitalQuery} onChange={(event) => setHospitalQuery(event.target.value)} placeholder="Cari Rumah Sakit..." className="w-full rounded border py-2 pl-9 pr-3 text-sm"/></div><p className="mb-3 text-xs text-dashboard-muted">{filteredHospitals.length} Rumah Sakit dengan mesin ditemukan</p><div className="space-y-2">{filteredHospitals.map((hospital) => { const owner = ownerByHospital.get(hospital.id); return <label key={hospital.id} className="flex items-start gap-3 rounded border p-3"><input type="checkbox" checked={selected.includes(hospital.id)} onChange={(e) => setSelected((current) => e.target.checked ? [...current, hospital.id] : current.filter((id) => id !== hospital.id))}/><span><span className="block text-sm font-medium">{hospital.hospitalName}</span>{owner && owner !== membersArea.name && <span className="text-xs text-amber-600">Akan dipindahkan dari {owner}</span>}</span></label>; })}{!filteredHospitals.length && <p className="py-6 text-center text-sm text-dashboard-muted">Rumah Sakit tidak ditemukan.</p>}</div><button onClick={() => void saveMembers()} className="mt-5 w-full rounded bg-dashboard-primary p-2 font-semibold text-white">Simpan Anggota</button></div></div>}
   </div>;
 }
