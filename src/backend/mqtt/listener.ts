@@ -242,7 +242,7 @@ export async function flushTenMinuteReadings(intervalDate = new Date()) {
 
     for (const serialNumber of activeSerials) {
       const listKey = getRedisKey(`machine:ten_minute_samples:${serialNumber}`);
-      const processingKey = getRedisKey(`machine:ten_minute_processing:${serialNumber}:${bucketStart.toISOString()}`);
+      const processingKey = getRedisKey(`machine:ten_minute_processing:${serialNumber}`);
       if (!(await redis.exists(processingKey))) {
         if (!(await redis.exists(listKey))) continue;
         await redis.rename(listKey, processingKey);
@@ -262,7 +262,8 @@ export async function flushTenMinuteReadings(intervalDate = new Date()) {
 
       if (samples.length === 0) continue;
 
-      const averageReading = averageSamples(samples, bucketStart);
+      const persistedBucketStart = getTenMinuteBucketStart(new Date(samples[0].terminalTime));
+      const averageReading = averageSamples(samples, persistedBucketStart);
 
       if (averageReading.clientId) {
         await db.insert(machineReadings).values(averageReading).onConflictDoNothing({

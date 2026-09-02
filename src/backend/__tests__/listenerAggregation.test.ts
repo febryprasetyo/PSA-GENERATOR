@@ -32,10 +32,15 @@ describe("MQTT ten-minute persistence", () => {
     expect(redis.del).toHaveBeenCalledWith(expect.stringContaining("ten_minute_processing"));
   });
 
-  it("keeps processing data when the database write fails", async () => {
-    const values = vi.fn().mockReturnValue({ onConflictDoNothing: vi.fn().mockRejectedValue(new Error("database down")) });
+  it("retries the same processing data at the next boundary", async () => {
+    const write = vi.fn().mockRejectedValueOnce(new Error("database down")).mockResolvedValueOnce(undefined);
+    const values = vi.fn().mockReturnValue({ onConflictDoNothing: write });
     vi.mocked(db.insert).mockReturnValue({ values } as never);
     await flushTenMinuteReadings(new Date("2026-09-02T10:00:00Z"));
     expect(redis.del).not.toHaveBeenCalled();
+    vi.mocked(redis.exists).mockReset().mockResolvedValue(1);
+    await flushTenMinuteReadings(new Date("2026-09-02T10:10:00Z"));
+    const renamedProcessingKey = vi.mocked(redis.rename).mock.calls[0][1];
+    expect(redis.del).toHaveBeenCalledWith(renamedProcessingKey);
   });
 });
