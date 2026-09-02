@@ -22,6 +22,10 @@ export function getRedisPrefix(): string {
   return process.env.REDIS_PREFIX || "psa:mgm:";
 }
 
+export function getSyncRedisPrefix(): string {
+  return process.env.SYNC_REDIS_PREFIX || getRedisPrefix();
+}
+
 // Deprecated static fallbacks for backwards compatibility
 export const BRAND_NAME = getBrandName();
 export const BRAND_LOGO = getBrandLogo();

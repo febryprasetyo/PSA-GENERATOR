@@ -4,7 +4,7 @@ import { machines } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
 import { redis } from "@/backend/redis";
 import { eq } from "drizzle-orm";
-import { getRedisPrefix } from "@/shared/config";
+import { getSyncRedisPrefix } from "@/shared/config";
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   try {
     // 1. Get all keys matching REDIS_PREFIX + machine:latest:* from Redis
-    const prefixStr = getRedisPrefix();
+    const prefixStr = getSyncRedisPrefix();
     const prefix = prefixStr.endsWith(":") ? prefixStr : `${prefixStr}:`;
     const searchPattern = `${prefix}machine:latest:*`;
     const keys = await redis.keys(searchPattern);
