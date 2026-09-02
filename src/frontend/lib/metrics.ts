@@ -34,25 +34,20 @@ export function enrichStation(station: Station): StationWithMetrics {
   
   const capacityMcDay = station.capacityMcDay || 0;
   const utilization = capacityMcDay > 0 ? (totalFlow / capacityMcDay) * 100 : 0;
-  const utilizationLevel = getUtilizationLevel(utilization);
   
   const purityLevel = getPurityLevel(station.oxygenPurity || 0);
   const pressureLevel = getPressureLevel(station.tankPressure || 0);
 
-  let healthScore = 100;
-  if (station.status === "offline") healthScore -= 55;
-  if (station.status === "warning") healthScore -= 18;
-  if (purityLevel === "critical") healthScore -= 35;
-  if (pressureLevel === "warning") healthScore -= 12;
-  if (pressureLevel === "critical") healthScore -= 28;
-  if (utilizationLevel === "warning") healthScore -= 8;
-  if (utilizationLevel === "critical") healthScore -= 18;
+  let healthScore = station.status === "offline" ? 0 : 100;
+  if (station.status === "warning") healthScore -= 20;
+  if (purityLevel === "critical") healthScore -= 40;
+  if (pressureLevel !== "normal") healthScore -= 25;
 
   const boundedScore = Math.max(0, Math.min(100, Math.round(healthScore)));
   const healthLevel: HealthLevel =
-    boundedScore < 55 || station.status === "offline" || purityLevel === "critical" || pressureLevel === "critical"
+    boundedScore < 60
       ? "critical"
-      : boundedScore < 80 || station.status === "warning" || pressureLevel === "warning"
+      : boundedScore < 80
         ? "warning"
         : "normal";
 

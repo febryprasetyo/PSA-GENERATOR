@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { redis } from "../redis";
 import { isAutoRegisterSn, getRedisKey, getBrandName } from "../../shared/config";
 import { averageSamples, getTenMinuteBucketStart, type BufferedSample } from "./intervalAggregation";
+import { resolveDailyBaseline } from "../telemetry/state";
 
 let MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || (process.env.MQTT_HOST ? `mqtt://${process.env.MQTT_HOST}:1883` : "mqtt://localhost:1883");
 if (MQTT_BROKER_URL && !MQTT_BROKER_URL.startsWith("mqtt://") && !MQTT_BROKER_URL.startsWith("mqtts://") && !MQTT_BROKER_URL.startsWith("ws://") && !MQTT_BROKER_URL.startsWith("wss://")) {
@@ -139,18 +140,16 @@ async function startListener() {
       };
 
       // 2b. Determine start of day total flow
-      const todayDateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD in UTC
-      let startOfDayTotalFlow = readingData.totalFlow;
-      const startOfDayDate = todayDateStr;
+      let dailyBaseline = resolveDailyBaseline(null, null, Number(readingData.totalFlow || 0));
 
       try {
         const latestDbRecord = await db.select().from(machineLatestReadings).where(eq(machineLatestReadings.machineId, machineId as string)).limit(1);
         if (latestDbRecord.length > 0) {
-          const prevDateStr = latestDbRecord[0].startOfDayDate;
-          if (prevDateStr === todayDateStr) {
-            // Same day, keep the old startOfDayTotalFlow
-            startOfDayTotalFlow = latestDbRecord[0].startOfDayTotalFlow ? String(latestDbRecord[0].startOfDayTotalFlow) : readingData.totalFlow;
-          }
+          dailyBaseline = resolveDailyBaseline(
+            latestDbRecord[0].startOfDayTotalFlow,
+            latestDbRecord[0].startOfDayDate,
+            Number(readingData.totalFlow || 0),
+          );
         }
       } catch (err) {
         console.error("[MQTT] Error fetching latest reading for startOfDay logic:", err);
@@ -178,8 +177,8 @@ async function startListener() {
 
       const latestDataForUpsert = {
         ...readingData,
-        startOfDayTotalFlow,
-        startOfDayDate,
+        startOfDayTotalFlow: String(dailyBaseline.value),
+        startOfDayDate: dailyBaseline.date,
       };
 
       // 3. Update Redis with latest reading (Fast layer - Realtime monitoring)

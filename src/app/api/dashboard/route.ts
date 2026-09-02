@@ -5,6 +5,8 @@ import { requireAuth } from "@/backend/auth/guard";
 import { eq, isNull, and } from "drizzle-orm";
 import { redis } from "@/backend/redis";
 import { getMachineLatestRedisKey } from "@/shared/config";
+import { getRedisKey } from "@/shared/config";
+import { calculateActualDailyFlow, resolveHeartbeatStatus } from "@/backend/telemetry/state";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -109,7 +111,7 @@ export async function GET(request: Request) {
       }
 
       const lastUpdateStr = latestData.receivedAt || latestData.updatedAt || latestData.terminalTime || m.dbTerminalTime || m.lastSeenAt || new Date().toISOString();
-      const isOffline = (new Date().getTime() - new Date(lastUpdateStr).getTime()) > 5 * 60 * 1000;
+      const resolvedStatus = resolveHeartbeatStatus(lastUpdateStr, m.status);
 
       const machineData = {
         id: m.serialNumber,
@@ -120,7 +122,7 @@ export async function GET(request: Request) {
         capacityMcDay: m.capacityMcDay ? parseFloat(m.capacityMcDay as string) : 0,
         capacityMcMonth: m.capacityMcMonth ? parseFloat(m.capacityMcMonth as string) : 0,
         machineCount: 1,
-        status: isOffline ? "offline" : m.status,
+        status: resolvedStatus,
         oxygenPurity: latestData.oxygenPurity !== undefined && latestData.oxygenPurity !== null ? parseFloat(latestData.oxygenPurity) : (m.dbOxygenPurity !== null ? parseFloat(m.dbOxygenPurity as string) : null),
         tankPressure: latestData.tankPressure !== undefined && latestData.tankPressure !== null ? parseFloat(latestData.tankPressure) : (m.dbTankPressure !== null ? parseFloat(m.dbTankPressure as string) : null),
         centralFlow: latestData.flowSentral !== undefined && latestData.flowSentral !== null ? parseFloat(latestData.flowSentral) : (m.dbFlowSentral !== null ? parseFloat(m.dbFlowSentral as string) : null),
@@ -132,15 +134,14 @@ export async function GET(request: Request) {
         actualDailyFlow: 0,
       };
       
-      // Calculate actual daily flow
+      // Preserve the first cumulative flow seen each UTC day as the daily baseline.
       if (machineData.totalFlow !== null) {
-        if (machineData.startOfDayTotalFlow !== null) {
-          machineData.actualDailyFlow = Math.max(0, machineData.totalFlow - machineData.startOfDayTotalFlow);
-        } else {
-          machineData.actualDailyFlow = 0; // If we don't have the baseline, we can't know daily flow yet
-        }
-      } else {
-        machineData.actualDailyFlow = 0;
+        const baselineDate = new Date(lastUpdateStr).toISOString().slice(0, 10);
+        const baselineKey = getRedisKey(`machine:daily_baseline:${m.serialNumber}:${baselineDate}`);
+        await redis.set(baselineKey, String(machineData.totalFlow), "EX", 172800, "NX");
+        const baseline = Number(await redis.get(baselineKey));
+        machineData.startOfDayTotalFlow = Number.isFinite(baseline) ? baseline : machineData.totalFlow;
+        machineData.actualDailyFlow = calculateActualDailyFlow(machineData.totalFlow, machineData.startOfDayTotalFlow);
       }
 
       return machineData;

@@ -3,6 +3,9 @@ import { db } from "@/backend/db";
 import { machines, masterHospitals } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
 import { eq, isNull, and } from "drizzle-orm";
+import { redis } from "@/backend/redis";
+import { getMachineLatestRedisKey } from "@/shared/config";
+import { resolveHeartbeatStatus } from "@/backend/telemetry/state";
 
 export async function GET() {
   const auth = await requireAuth();
@@ -56,15 +59,23 @@ export async function GET() {
       .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
       .where(isNull(machines.deletedAt));
     }
-    const updatedMachines = allMachines.map((machine) => {
-      const isOffline = machine.lastSeenAt 
-        ? (new Date().getTime() - new Date(machine.lastSeenAt).getTime()) > 5 * 60 * 1000
-        : true;
+    const updatedMachines = await Promise.all(allMachines.map(async (machine) => {
+      const latestDataStr = await redis.get(getMachineLatestRedisKey(machine.serialNumber));
+      let heartbeat: string | Date | null = machine.lastSeenAt;
+      if (latestDataStr) {
+        try {
+          const latestData = JSON.parse(latestDataStr);
+          heartbeat = latestData.receivedAt || latestData.updatedAt || latestData.terminalTime || heartbeat;
+        } catch {
+          console.error("Failed to parse Redis telemetry for", machine.serialNumber);
+        }
+      }
       return {
         ...machine,
-        status: isOffline ? "offline" : machine.status,
+        status: resolveHeartbeatStatus(heartbeat, machine.status),
+        lastSeenAt: heartbeat,
       };
-    });
+    }));
 
     return NextResponse.json({ machines: updatedMachines });
   } catch (error) {
