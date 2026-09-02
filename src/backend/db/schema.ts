@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar, integer, decimal, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, varchar, integer, decimal, boolean, jsonb, primaryKey, unique, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
@@ -20,6 +20,26 @@ export const masterHospitals = pgTable('master_hospitals', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const areas = pgTable('areas', {
+  id: text('id').primaryKey().$defaultFn(() => randomUUID()),
+  name: varchar('name', { length: 150 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('areas_name_lower_unique').on(sql`lower(${table.name})`),
+]);
+
+export const areaHospitals = pgTable('area_hospitals', {
+  areaId: text('area_id').notNull().references(() => areas.id, { onDelete: 'cascade' }),
+  hospitalId: text('hospital_id').notNull().references(() => masterHospitals.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ name: 'area_hospitals_pk', columns: [table.areaId, table.hospitalId] }),
+  unique('area_hospitals_hospital_id_unique').on(table.hospitalId),
+]);
 
 export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => randomUUID()),
@@ -81,7 +101,9 @@ export const machineReadings = pgTable('machine_readings', {
   mqttTopic: text('mqtt_topic'),
   rawPayload: jsonb('raw_payload'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => [
+  unique('machine_readings_machine_terminal_unique').on(table.machineId, table.terminalTime),
+]);
 
 export const machineLatestReadings = pgTable('machine_latest_readings', {
   machineId: text('machine_id').primaryKey().references(() => machines.id),

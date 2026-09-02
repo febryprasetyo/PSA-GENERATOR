@@ -13,6 +13,11 @@ async function main() {
     await db.execute(sql`ALTER TABLE machine_readings DROP CONSTRAINT IF EXISTS machine_readings_pkey;`);
     await db.execute(sql`ALTER TABLE machine_readings ADD CONSTRAINT machine_readings_pkey PRIMARY KEY (id, terminal_time);`);
 
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS machine_readings_machine_terminal_unique
+      ON machine_readings (machine_id, terminal_time)
+    `);
+
     // Create hypertable
     await db.execute(sql`SELECT create_hypertable('machine_readings', 'terminal_time', if_not_exists => TRUE);`);
     console.log("machine_readings successfully converted to hypertable.");
