@@ -16,4 +16,21 @@ describe("ten-minute aggregation", () => {
     expect(reading).toMatchObject({ oxygenPurity: "95.00", totalFlow: "105.00", mqttTopic: "new", rawPayload: { sample: 2 } });
     expect(reading.terminalTime.toISOString()).toBe("2026-09-02T10:10:00.000Z");
   });
+
+  it("averages independently available Vessel values including zero", () => {
+    const reading = averageSamples([
+      { machineId: "m-1", clientId: "h-1", serialNumber: "SN1", terminalTime: "2026-09-02T10:11:00Z", vessel1: "1.00" },
+      { machineId: "m-1", clientId: "h-1", serialNumber: "SN1", terminalTime: "2026-09-02T10:19:00Z", vessel1: "2.00", vessel2: "0" },
+    ], new Date("2026-09-02T10:10:00Z"));
+
+    expect(reading).toMatchObject({ vessel1: "1.50", vessel2: "0.00" });
+  });
+
+  it("keeps absent Vessel values null", () => {
+    const reading = averageSamples([
+      { machineId: "m-1", clientId: "h-1", serialNumber: "SN1", terminalTime: "2026-09-02T10:11:00Z" },
+    ], new Date("2026-09-02T10:10:00Z"));
+
+    expect(reading).toMatchObject({ vessel1: null, vessel2: null });
+  });
 });

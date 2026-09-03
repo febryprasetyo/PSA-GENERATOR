@@ -6,6 +6,8 @@ export type BufferedSample = {
   groupName?: string | null;
   oxygenPurity?: string | null;
   tankPressure?: string | null;
+  vessel1?: string | null;
+  vessel2?: string | null;
   flowSentral?: string | null;
   flowBooster?: string | null;
   totalFlow?: string | null;
@@ -14,7 +16,7 @@ export type BufferedSample = {
   rawPayload?: unknown;
 };
 
-const metricKeys = ["oxygenPurity", "tankPressure", "flowSentral", "flowBooster", "totalFlow", "runningTimeHours"] as const;
+const metricKeys = ["oxygenPurity", "tankPressure", "vessel1", "vessel2", "flowSentral", "flowBooster", "totalFlow", "runningTimeHours"] as const;
 
 export function getTenMinuteBucketStart(date: Date): Date {
   const value = new Date(date);
