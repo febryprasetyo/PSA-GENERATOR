@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { redis } from "../redis";
 import { isAutoRegisterSn, getRedisKey, getBrandName } from "../../shared/config";
 import { averageSamples, getTenMinuteBucketStart, type BufferedSample } from "./intervalAggregation";
+import { parseNullableMetricString } from "../telemetry/vessel";
 import { resolveDailyBaseline } from "../telemetry/state";
 
 let MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || (process.env.MQTT_HOST ? `mqtt://${process.env.MQTT_HOST}:1883` : "mqtt://localhost:1883");
@@ -122,6 +123,10 @@ async function startListener() {
       };
 
       const terminalTime = payload._terminalTime ? new Date(payload._terminalTime as string | number) : new Date();
+      const vessel1 = parseNullableMetricString(getVal(['Schneider_PLC_VESSEL1']));
+      const vessel2 = parseNullableMetricString(getVal(['Schneider_PLC_VESSEL2']));
+      if (vessel1.invalid) console.warn(`[MQTT] Invalid Schneider_PLC_VESSEL1 for ${serialNumber}; storing NULL.`);
+      if (vessel2.invalid) console.warn(`[MQTT] Invalid Schneider_PLC_VESSEL2 for ${serialNumber}; storing NULL.`);
 
       const readingData = {
         machineId,
@@ -131,8 +136,8 @@ async function startListener() {
         groupName: (payload._groupName as string) || null,
         oxygenPurity: getVal(['Schneider_PLC_OXYGEN_PURITY', 'Siemens_S7_200CN_SMART_1_O2Purity']),
         tankPressure: getVal(['Schneider_PLC_MF350_RESULT_O2_TANK', 'Siemens_S7_200CN_SMART_1_O2Tank']),
-        vessel1: getVal(['Schneider_PLC_VESSEL1']),
-        vessel2: getVal(['Schneider_PLC_VESSEL2']),
+        vessel1: vessel1.value,
+        vessel2: vessel2.value,
         flowSentral: getVal(['Schneider_PLC_FLOW_METER', 'Siemens_S7_200CN_SMART_1_Flow1']),
         flowBooster: getVal(['Schneider_PLC_FLOWMETER2', 'Siemens_S7_200CN_SMART_1_Flow2']),
         totalFlow: getVal(['Schneider_PLC_TOTAL_FLOW', 'TOTAL_TOTAL', 'Siemens_S7_200CN_SMART_1_AccuF1']),
