@@ -7,6 +7,7 @@ import { redis } from "@/backend/redis";
 import { getMachineLatestRedisKey } from "@/shared/config";
 import { getRedisKey } from "@/shared/config";
 import { calculateActualDailyFlow, resolveHeartbeatStatus } from "@/backend/telemetry/state";
+import { parseNullableMetric } from "@/backend/telemetry/vessel";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -33,6 +34,8 @@ export async function GET(request: Request) {
       lastSeenAt: machines.lastSeenAt,
       dbOxygenPurity: machineLatestReadings.oxygenPurity,
       dbTankPressure: machineLatestReadings.tankPressure,
+      dbVessel1: machineLatestReadings.vessel1,
+      dbVessel2: machineLatestReadings.vessel2,
       dbFlowSentral: machineLatestReadings.flowSentral,
       dbFlowBooster: machineLatestReadings.flowBooster,
       dbTotalFlow: machineLatestReadings.totalFlow,
@@ -70,6 +73,8 @@ export async function GET(request: Request) {
       status: string;
       dbOxygenPurity?: string | null;
       dbTankPressure?: string | null;
+      dbVessel1?: string | null;
+      dbVessel2?: string | null;
       dbFlowSentral?: string | null;
       dbFlowBooster?: string | null;
       dbTotalFlow?: string | null;
@@ -88,6 +93,8 @@ export async function GET(request: Request) {
       terminalTime?: string;
       oxygenPurity?: string;
       tankPressure?: string;
+      vessel1?: string | number | null;
+      vessel2?: string | number | null;
       flowSentral?: string;
       flowBooster?: string;
       totalFlow?: string;
@@ -125,6 +132,8 @@ export async function GET(request: Request) {
         status: resolvedStatus,
         oxygenPurity: latestData.oxygenPurity !== undefined && latestData.oxygenPurity !== null ? parseFloat(latestData.oxygenPurity) : (m.dbOxygenPurity !== null ? parseFloat(m.dbOxygenPurity as string) : null),
         tankPressure: latestData.tankPressure !== undefined && latestData.tankPressure !== null ? parseFloat(latestData.tankPressure) : (m.dbTankPressure !== null ? parseFloat(m.dbTankPressure as string) : null),
+        vessel1: parseNullableMetric(latestData.vessel1 ?? m.dbVessel1),
+        vessel2: parseNullableMetric(latestData.vessel2 ?? m.dbVessel2),
         centralFlow: latestData.flowSentral !== undefined && latestData.flowSentral !== null ? parseFloat(latestData.flowSentral) : (m.dbFlowSentral !== null ? parseFloat(m.dbFlowSentral as string) : null),
         boosterFlow: latestData.flowBooster !== undefined && latestData.flowBooster !== null ? parseFloat(latestData.flowBooster) : (m.dbFlowBooster !== null ? parseFloat(m.dbFlowBooster as string) : null),
         totalFlow: latestData.totalFlow !== undefined && latestData.totalFlow !== null ? parseFloat(latestData.totalFlow) : (m.dbTotalFlow !== null ? parseFloat(m.dbTotalFlow as string) : null),

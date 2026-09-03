@@ -14,6 +14,8 @@ export type Station = {
   boosterFlow: number;
   oxygenPurity: number;
   tankPressure: number;
+  vessel1?: number | null;
+  vessel2?: number | null;
   totalFlow: number;
   actualDailyFlow?: number;
   runningTimeHours: number;
@@ -59,6 +61,8 @@ export type LoggerEntry = {
   timestamp: string;
   oxygenPurity: number;
   tankPressure: number;
+  vessel1?: number | null;
+  vessel2?: number | null;
   centralFlow: number;
   boosterFlow: number;
   totalFlow: number;

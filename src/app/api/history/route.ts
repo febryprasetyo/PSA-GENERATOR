@@ -4,6 +4,7 @@ import { machineReadings, machines, masterHospitals } from "@/backend/db/schema"
 import { requireAuth } from "@/backend/auth/guard";
 import { eq, like, or, desc, sql, and, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { resolveHospitalScope } from "@/backend/auth/client-scope";
+import { parseNullableMetric } from "@/backend/telemetry/vessel";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -80,6 +81,8 @@ export async function GET(request: NextRequest) {
       timestamp: machineReadings.receivedAt,
       oxygenPurity: machineReadings.oxygenPurity,
       tankPressure: machineReadings.tankPressure,
+      vessel1: machineReadings.vessel1,
+      vessel2: machineReadings.vessel2,
       centralFlow: machineReadings.flowSentral,
       boosterFlow: machineReadings.flowBooster,
       totalFlow: machineReadings.totalFlow,
@@ -108,6 +111,8 @@ export async function GET(request: NextRequest) {
       timestamp: entry.timestamp ? new Date(entry.timestamp).toLocaleString("id-ID") : "Unknown",
       oxygenPurity: entry.oxygenPurity ? parseFloat(entry.oxygenPurity) : 0,
       tankPressure: entry.tankPressure ? parseFloat(entry.tankPressure) : 0,
+      vessel1: parseNullableMetric(entry.vessel1),
+      vessel2: parseNullableMetric(entry.vessel2),
       centralFlow: entry.centralFlow ? parseFloat(entry.centralFlow) : 0,
       boosterFlow: entry.boosterFlow ? parseFloat(entry.boosterFlow) : 0,
       totalFlow: entry.totalFlow ? parseFloat(entry.totalFlow) : 0,
