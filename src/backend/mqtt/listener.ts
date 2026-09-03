@@ -3,13 +3,14 @@ dotenv.config();
 
 import mqtt from "mqtt";
 import { db } from "../db";
-import { machines, machineReadings, machineLatestReadings } from "../db/schema";
+import { machines, machineReadings, machineLatestReadings, masterHospitals } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { redis } from "../redis";
 import { isAutoRegisterSn, getRedisKey, getBrandName } from "../../shared/config";
 import { averageSamples, getTenMinuteBucketStart, type BufferedSample } from "./intervalAggregation";
 import { parseNullableMetricString } from "../telemetry/vessel";
 import { resolveDailyBaseline } from "../telemetry/state";
+import { parseMachineTimestamp, resolveHospitalTimeZone } from "../telemetry/timezone";
 
 let MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || (process.env.MQTT_HOST ? `mqtt://${process.env.MQTT_HOST}:1883` : "mqtt://localhost:1883");
 if (MQTT_BROKER_URL && !MQTT_BROKER_URL.startsWith("mqtt://") && !MQTT_BROKER_URL.startsWith("mqtts://") && !MQTT_BROKER_URL.startsWith("ws://") && !MQTT_BROKER_URL.startsWith("wss://")) {
@@ -22,7 +23,13 @@ const MQTT_PASSWORD = process.env.MQTT_PASSWORD || "";
 const TOPIC_PATTERN = "data/psa/#";
 
 async function startListener() {
-  console.log(`[MQTT] Connecting to broker at ${MQTT_BROKER_URL}... (Brand: ${getBrandName()}, Auto-Register SN: ${isAutoRegisterSn()}, DB: ${process.env.DATABASE_URL})`);
+  let databaseName = "unknown";
+  try {
+    databaseName = process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).pathname.slice(1) : "unknown";
+  } catch {
+    databaseName = "invalid-url";
+  }
+  console.log(`[MQTT] Connecting to broker at ${MQTT_BROKER_URL}... (Brand: ${getBrandName()}, Auto-Register SN: ${isAutoRegisterSn()}, DB: ${databaseName})`);
 
   const options: mqtt.IClientOptions = {
     clientId: `psa_${getBrandName().toLowerCase()}_${Math.random().toString(16).slice(2, 10)}`,
@@ -75,8 +82,16 @@ async function startListener() {
       // 1. Check if machine exists, if not, check auto-register policy
       let machineId = null;
       let clientId = null;
+      let hospitalProvince: string | null = null;
       
-      const existingMachines = await db.select().from(machines).where(eq(machines.serialNumber, serialNumber)).limit(1);
+      const existingMachines = await db.select({
+        id: machines.id,
+        clientId: machines.clientId,
+        province: masterHospitals.province,
+      }).from(machines)
+        .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
+        .where(eq(machines.serialNumber, serialNumber))
+        .limit(1);
       
       if (existingMachines.length === 0) {
         if (!isAutoRegisterSn()) {
@@ -95,6 +110,7 @@ async function startListener() {
       } else {
         machineId = existingMachines[0].id;
         clientId = existingMachines[0].clientId;
+        hospitalProvince = existingMachines[0].province;
         // Update status and lastSeenAt
         await db.update(machines)
           .set({ 
@@ -122,7 +138,19 @@ async function startListener() {
         return null;
       };
 
-      const terminalTime = payload._terminalTime ? new Date(payload._terminalTime as string | number) : new Date();
+      const receivedAt = new Date();
+      const resolvedTimeZone = resolveHospitalTimeZone(hospitalProvince);
+      const parsedTimestamp = parseMachineTimestamp(payload._terminalTime, resolvedTimeZone.timeZone, receivedAt);
+      const terminalTime = parsedTimestamp.date;
+      if (resolvedTimeZone.usedFallback) {
+        console.warn(`[MQTT] Unknown hospital province for ${serialNumber}; using Asia/Jakarta.`);
+      }
+      if (parsedTimestamp.source === "received" && payload._terminalTime !== undefined && payload._terminalTime !== null && payload._terminalTime !== "") {
+        console.warn(`[MQTT] Invalid _terminalTime for ${serialNumber}; using receipt time.`);
+      }
+      if (parsedTimestamp.driftMs !== null && parsedTimestamp.driftMs > 15 * 60 * 1000) {
+        console.warn(`[MQTT] Machine time drift exceeds 15 minutes for ${serialNumber}; preserving machine time.`);
+      }
       const vessel1 = parseNullableMetricString(getVal(['Schneider_PLC_VESSEL1']));
       const vessel2 = parseNullableMetricString(getVal(['Schneider_PLC_VESSEL2']));
       if (vessel1.invalid) console.warn(`[MQTT] Invalid Schneider_PLC_VESSEL1 for ${serialNumber}; storing NULL.`);
@@ -133,6 +161,7 @@ async function startListener() {
         clientId,
         serialNumber,
         terminalTime: terminalTime,
+        receivedAt,
         groupName: (payload._groupName as string) || null,
         oxygenPurity: getVal(['Schneider_PLC_OXYGEN_PURITY', 'Siemens_S7_200CN_SMART_1_O2Purity']),
         tankPressure: getVal(['Schneider_PLC_MF350_RESULT_O2_TANK', 'Siemens_S7_200CN_SMART_1_O2Tank']),
@@ -194,7 +223,7 @@ async function startListener() {
       const redisKey = getRedisKey(`machine:latest:${serialNumber}`);
       await redis.set(redisKey, JSON.stringify({
         ...latestDataForUpsert,
-        receivedAt: new Date(),
+        receivedAt,
         updatedAt: new Date(),
       }));
 
@@ -205,7 +234,7 @@ async function startListener() {
           target: machineLatestReadings.machineId,
           set: {
             ...latestDataForUpsert,
-            receivedAt: new Date(),
+            receivedAt,
             updatedAt: new Date(),
           },
         });

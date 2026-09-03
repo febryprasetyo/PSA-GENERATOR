@@ -1,6 +1,11 @@
 import { parsePsaTopic } from "@/backend/mqtt/parsePsaTopic";
+import { parseMachineTimestamp, resolveHospitalTimeZone } from "@/backend/telemetry/timezone";
 
-export function transformMqttPayload(topic: string, payload: Record<string, unknown>) {
+export function transformMqttPayload(
+  topic: string,
+  payload: Record<string, unknown>,
+  context: { province?: string | null; receivedAt?: Date } = {},
+) {
   const serialNumber = parsePsaTopic(topic);
   if (!serialNumber) {
     throw new Error("Invalid topic");
@@ -16,9 +21,15 @@ export function transformMqttPayload(topic: string, payload: Record<string, unkn
     return null;
   };
 
+  const receivedAt = context.receivedAt || new Date();
+  const { timeZone } = resolveHospitalTimeZone(context.province);
+  const timestamp = parseMachineTimestamp(payload._terminalTime, timeZone, receivedAt);
+
   return {
     serialNumber,
-    terminalTime: payload._terminalTime ? new Date(payload._terminalTime as string | number) : new Date(),
+    terminalTime: timestamp.date,
+    timestampSource: timestamp.source,
+    timestampDriftMs: timestamp.driftMs,
     groupName: (payload._groupName as string) || null,
     oxygenPurity: getVal(['Schneider_PLC_OXYGEN_PURITY', 'Siemens_S7_200CN_SMART_1_O2Purity']),
     tankPressure: getVal(['Schneider_PLC_MF350_RESULT_O2_TANK', 'Siemens_S7_200CN_SMART_1_O2Tank']),
