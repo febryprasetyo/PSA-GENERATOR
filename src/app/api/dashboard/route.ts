@@ -8,7 +8,7 @@ import { getMachineLatestRedisKey } from "@/shared/config";
 import { getRedisKey } from "@/shared/config";
 import { calculateActualDailyFlow, resolveHeartbeatStatus } from "@/backend/telemetry/state";
 import { parseNullableMetric } from "@/backend/telemetry/vessel";
-import { formatDashboardEventTimestamp } from "@/backend/telemetry/time-api";
+import { formatDashboardMachineEventTimestamp } from "@/backend/telemetry/time-api";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -94,6 +94,7 @@ export async function GET(request: Request) {
       receivedAt?: string;
       updatedAt?: string;
       terminalTime?: string;
+      rawPayload?: unknown;
       oxygenPurity?: string;
       tankPressure?: string;
       vessel1?: string | number | null;
@@ -142,7 +143,7 @@ export async function GET(request: Request) {
         totalFlow: latestData.totalFlow !== undefined && latestData.totalFlow !== null ? parseFloat(latestData.totalFlow) : (m.dbTotalFlow !== null ? parseFloat(m.dbTotalFlow as string) : null),
         startOfDayTotalFlow: latestData.startOfDayTotalFlow !== undefined && latestData.startOfDayTotalFlow !== null ? parseFloat(latestData.startOfDayTotalFlow) : (m.dbStartOfDayTotalFlow !== null ? parseFloat(m.dbStartOfDayTotalFlow as string) : null),
         runningTimeHours: latestData.runningTimeHours !== undefined && latestData.runningTimeHours !== null ? parseFloat(latestData.runningTimeHours) : (m.dbRunningTimeHours !== null ? parseFloat(m.dbRunningTimeHours as string) : null),
-        eventTimestamp: formatDashboardEventTimestamp(latestData.terminalTime ?? m.dbTerminalTime, m.province),
+        eventTimestamp: formatDashboardMachineEventTimestamp(latestData.rawPayload, latestData.terminalTime ?? m.dbTerminalTime, m.province),
         lastUpdate: lastUpdateStr,
         actualDailyFlow: 0,
       };
