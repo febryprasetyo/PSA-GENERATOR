@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getTableConfig } from "drizzle-orm/pg-core";
-import { areaHospitals, areas, machineReadings } from "@/backend/db/schema";
+import { areaHospitals, areas, machineLatestReadings, machineReadings } from "@/backend/db/schema";
 
 describe("Area schema", () => {
   it("defines the Area tables", () => {
@@ -20,5 +20,15 @@ describe("Area schema", () => {
     expect(config.uniqueConstraints.map((constraint) => constraint.name)).toContain(
       "machine_readings_machine_terminal_unique",
     );
+  });
+
+  it("defines nullable Vessel columns for historical and latest readings", () => {
+    const historical = getTableConfig(machineReadings);
+    const latest = getTableConfig(machineLatestReadings);
+
+    for (const config of [historical, latest]) {
+      expect(config.columns.find((column) => column.name === "vessel_1")?.notNull).toBe(false);
+      expect(config.columns.find((column) => column.name === "vessel_2")?.notNull).toBe(false);
+    }
   });
 });
