@@ -1,3 +1,5 @@
+import { formatHospitalTimestamp, resolveHospitalTimeZone } from "@/backend/telemetry/timezone";
+
 export function getThirtyMinuteBucketStart(date: Date): Date {
   const value = new Date(date);
   value.setUTCMinutes(value.getUTCMinutes() < 30 ? 0 : 30, 0, 0);
@@ -12,6 +14,10 @@ export function formatNullableCsvMetric(value: string | number | null | undefine
   if (value === null || value === undefined || value === "") return "";
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed.toFixed(2) : "";
+}
+
+export function formatExportTimestamp(value: Date | string | number, province: string | null | undefined): string {
+  return formatHospitalTimestamp(value, resolveHospitalTimeZone(province).timeZone);
 }
 
 export function buildCsvHeader(includeMachineName: boolean): string[] {

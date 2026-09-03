@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/backend/db";
 import { machineReadings, machines, masterHospitals } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
-import { eq, like, or, desc, and, isNull, isNotNull, gte, lte, avg, count, inArray, sql } from "drizzle-orm";
+import { eq, like, or, desc, and, isNull, isNotNull, avg, count, inArray, sql } from "drizzle-orm";
 import { redis } from "@/backend/redis";
-import { buildCsvHeader, formatNullableCsvMetric, shouldIncludeMachineName } from "./export-query";
+import { buildCsvHeader, formatExportTimestamp, formatNullableCsvMetric, shouldIncludeMachineName } from "./export-query";
 import { resolveHospitalScope } from "@/backend/auth/client-scope";
+import { localTelemetryTimeSql } from "@/backend/telemetry/timezone-sql";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -79,8 +80,11 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Date range constraint
-    conditions.push(gte(machineReadings.terminalTime, startDate));
-    conditions.push(lte(machineReadings.terminalTime, endDate));
+    const localTerminalTime = localTelemetryTimeSql(machineReadings.terminalTime, masterHospitals.province);
+    const startLocal = startDateParam?.replace("T", " ").replace(/Z$/, "") || startDate.toISOString().replace("T", " ").replace("Z", "");
+    const endLocal = endDateParam?.replace("T", " ").replace(/Z$/, "") || endDate.toISOString().replace("T", " ").replace("Z", "");
+    conditions.push(sql`${localTerminalTime} >= ${startLocal}::timestamp`);
+    conditions.push(sql`${localTerminalTime} <= ${endLocal}::timestamp`);
 
     // 5. Exclude soft-deleted machines & unassigned machines
     conditions.push(isNull(machines.deletedAt));
@@ -89,7 +93,7 @@ export async function GET(request: NextRequest) {
     const whereClause = and(...conditions);
 
     // Caching Key Strategy (Redis)
-    const cacheKey = `export:v4:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
+    const cacheKey = `export:v5:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
 
     try {
       const cachedCsv = await redis.get(cacheKey);
@@ -112,6 +116,7 @@ export async function GET(request: NextRequest) {
     const groupedRows = await db.select({
       hospitalId: masterHospitals.id,
       hospitalName: masterHospitals.hospitalName,
+      province: masterHospitals.province,
       machineId: machines.id,
       serialNumber: machines.serialNumber,
       machineName: machines.machineName,
@@ -128,7 +133,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(machines, eq(machineReadings.machineId, machines.id))
       .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
       .where(whereClause)
-      .groupBy(masterHospitals.id, masterHospitals.hospitalName, machines.id, machines.serialNumber, machines.machineName, bucketStart)
+      .groupBy(masterHospitals.id, masterHospitals.hospitalName, masterHospitals.province, machines.id, machines.serialNumber, machines.machineName, bucketStart)
       .orderBy(desc(bucketStart));
 
     const representedHospitalIds = [...new Set(groupedRows.map((row) => row.hospitalId).filter((id): id is string => Boolean(id)))];
@@ -159,9 +164,7 @@ export async function GET(request: NextRequest) {
             const batch = groupedRows.slice(offset, offset + CHUNK_SIZE);
             let chunkStr = "";
             for (const item of batch) {
-              const formattedTime = item.bucketStart
-                ? new Date(item.bucketStart).toISOString().replace("T", " ").substring(0, 19)
-                : "-";
+              const formattedTime = item.bucketStart ? formatExportTimestamp(item.bucketStart, item.province) : "-";
               
               const row = [
                 rowNumber++,

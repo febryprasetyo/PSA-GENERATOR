@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCsvHeader, formatNullableCsvMetric, getThirtyMinuteBucketStart, shouldIncludeMachineName } from "@/app/api/history/export/export-query";
+import { buildCsvHeader, formatExportTimestamp, formatNullableCsvMetric, getThirtyMinuteBucketStart, shouldIncludeMachineName } from "@/app/api/history/export/export-query";
 
 describe("30-minute export", () => {
   it("aligns timestamps to half-hour boundaries", () => {
@@ -37,5 +37,12 @@ describe("30-minute export", () => {
     expect(formatNullableCsvMetric("invalid")).toBe("");
     expect(formatNullableCsvMetric(0)).toBe("0.00");
     expect(formatNullableCsvMetric("1.25")).toBe("1.25");
+  });
+
+  it("formats export timestamps in hospital local time without a zone label", () => {
+    expect(formatExportTimestamp(new Date("2026-09-03T03:07:00Z"), "Jawa Tengah")).toBe("03/09/2026 10:07:00");
+    expect(formatExportTimestamp(new Date("2026-09-03T03:07:00Z"), "Papua Selatan")).toBe("03/09/2026 12:07:00");
+    expect(buildCsvHeader(true)).toContain("Timestamp");
+    expect(buildCsvHeader(true).some((cell) => /WIB|WITA|WIT|Zona/.test(cell))).toBe(false);
   });
 });

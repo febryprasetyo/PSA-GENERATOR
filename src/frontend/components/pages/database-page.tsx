@@ -64,14 +64,10 @@ export default function DatabasePage() {
       startDate = d.toISOString();
     } else if (timeRange === "custom") {
       if (customStartDate) {
-        startDate = new Date(customStartDate).toISOString();
+        startDate = `${customStartDate}T00:00:00.000`;
       }
       if (customEndDate) {
-        endDate = new Date(customEndDate).toISOString();
-        // Set to end of day
-        const end = new Date(customEndDate);
-        end.setHours(23, 59, 59, 999);
-        endDate = end.toISOString();
+        endDate = `${customEndDate}T23:59:59.999`;
       }
 
       if (customStartDate && customEndDate) {

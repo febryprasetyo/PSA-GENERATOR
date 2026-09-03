@@ -170,12 +170,10 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
       if (serialNumber) queryParams.set("serialNumber", serialNumber);
 
       if (startDate) {
-        queryParams.set("startDate", new Date(startDate).toISOString());
+        queryParams.set("startDate", `${startDate}T00:00:00.000`);
       }
       if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        queryParams.set("endDate", end.toISOString());
+        queryParams.set("endDate", `${endDate}T23:59:59.999`);
       }
 
       const res = await fetch(`/api/history?${queryParams.toString()}`);
@@ -210,12 +208,10 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
       if (serialNumber) queryParams.set("serialNumber", serialNumber);
 
       if (startDate) {
-        queryParams.set("startDate", new Date(startDate).toISOString());
+        queryParams.set("startDate", `${startDate}T00:00:00.000`);
       }
       if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        queryParams.set("endDate", end.toISOString());
+        queryParams.set("endDate", `${endDate}T23:59:59.999`);
       }
 
       const res = await fetch(`/api/history/export?${queryParams.toString()}`);

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/backend/db";
 import { machineReadings, machines, masterHospitals } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
-import { eq, like, or, desc, sql, and, isNull, isNotNull, gte, lte } from "drizzle-orm";
+import { eq, like, or, desc, sql, and, isNull, isNotNull } from "drizzle-orm";
 import { resolveHospitalScope } from "@/backend/auth/client-scope";
 import { parseNullableMetric } from "@/backend/telemetry/vessel";
 import { formatHistoryEventTimestamp } from "@/backend/telemetry/time-api";
+import { localTelemetryTimeSql } from "@/backend/telemetry/timezone-sql";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -65,10 +66,12 @@ export async function GET(request: NextRequest) {
 
     // Date range constraint
     if (startDate) {
-      conditions.push(gte(machineReadings.terminalTime, new Date(startDate)));
+      const localTerminalTime = localTelemetryTimeSql(machineReadings.terminalTime, masterHospitals.province);
+      conditions.push(sql`${localTerminalTime} >= ${startDate.replace("T", " ").replace(/Z$/, "")}::timestamp`);
     }
     if (endDate) {
-      conditions.push(lte(machineReadings.terminalTime, new Date(endDate)));
+      const localTerminalTime = localTelemetryTimeSql(machineReadings.terminalTime, masterHospitals.province);
+      conditions.push(sql`${localTerminalTime} <= ${endDate.replace("T", " ").replace(/Z$/, "")}::timestamp`);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
