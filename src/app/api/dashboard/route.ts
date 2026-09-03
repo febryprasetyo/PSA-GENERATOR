@@ -8,6 +8,7 @@ import { getMachineLatestRedisKey } from "@/shared/config";
 import { getRedisKey } from "@/shared/config";
 import { calculateActualDailyFlow, resolveHeartbeatStatus } from "@/backend/telemetry/state";
 import { parseNullableMetric } from "@/backend/telemetry/vessel";
+import { formatDashboardEventTimestamp } from "@/backend/telemetry/time-api";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
       dbTotalFlow: machineLatestReadings.totalFlow,
       dbRunningTimeHours: machineLatestReadings.runningTimeHours,
       dbTerminalTime: machineLatestReadings.terminalTime,
+      dbReceivedAt: machineLatestReadings.receivedAt,
       dbStartOfDayTotalFlow: machineLatestReadings.startOfDayTotalFlow,
       areaId: areas.id,
       areaName: areas.name,
@@ -81,6 +83,7 @@ export async function GET(request: Request) {
       dbStartOfDayTotalFlow?: string | null;
       dbRunningTimeHours?: string | null;
       dbTerminalTime?: string | Date | null;
+      dbReceivedAt?: string | Date | null;
       lastSeenAt?: string | Date | null;
       areaId?: string | null;
       areaName?: string | null;
@@ -117,7 +120,7 @@ export async function GET(request: Request) {
         }
       }
 
-      const lastUpdateStr = latestData.receivedAt || latestData.updatedAt || latestData.terminalTime || m.dbTerminalTime || m.lastSeenAt || new Date().toISOString();
+      const lastUpdateStr = latestData.receivedAt || latestData.updatedAt || m.dbReceivedAt || m.lastSeenAt || new Date().toISOString();
       const resolvedStatus = resolveHeartbeatStatus(lastUpdateStr, m.status);
 
       const machineData = {
@@ -139,6 +142,7 @@ export async function GET(request: Request) {
         totalFlow: latestData.totalFlow !== undefined && latestData.totalFlow !== null ? parseFloat(latestData.totalFlow) : (m.dbTotalFlow !== null ? parseFloat(m.dbTotalFlow as string) : null),
         startOfDayTotalFlow: latestData.startOfDayTotalFlow !== undefined && latestData.startOfDayTotalFlow !== null ? parseFloat(latestData.startOfDayTotalFlow) : (m.dbStartOfDayTotalFlow !== null ? parseFloat(m.dbStartOfDayTotalFlow as string) : null),
         runningTimeHours: latestData.runningTimeHours !== undefined && latestData.runningTimeHours !== null ? parseFloat(latestData.runningTimeHours) : (m.dbRunningTimeHours !== null ? parseFloat(m.dbRunningTimeHours as string) : null),
+        eventTimestamp: formatDashboardEventTimestamp(latestData.terminalTime ?? m.dbTerminalTime, m.province),
         lastUpdate: lastUpdateStr,
         actualDailyFlow: 0,
       };

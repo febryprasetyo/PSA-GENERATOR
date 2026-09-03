@@ -195,7 +195,7 @@ function StationRow({ station, showArea }: { station: StationWithMetrics; showAr
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-dashboard-text">{station.hospitalName}</p>
             <p className="mt-1 text-xs text-dashboard-muted">
-              {station.id} | {showArea && <>{station.areaName || "Belum Memiliki Area"} | </>}{station.region} | {station.machineCount} mesin | {station.runningTimeHours ? formatNumber(station.runningTimeHours) : 0} jam | Sync: {new Date(station.lastUpdate).toLocaleTimeString("id-ID")}
+              {station.id} | {showArea && <>{station.areaName || "Belum Memiliki Area"} | </>}{station.region} | {station.machineCount} mesin | {station.runningTimeHours ? formatNumber(station.runningTimeHours) : 0} jam | Sync: {station.eventTimestamp || "-"}
             </p>
           </div>
         </div>

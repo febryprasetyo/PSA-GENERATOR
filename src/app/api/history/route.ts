@@ -5,6 +5,7 @@ import { requireAuth } from "@/backend/auth/guard";
 import { eq, like, or, desc, sql, and, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { resolveHospitalScope } from "@/backend/auth/client-scope";
 import { parseNullableMetric } from "@/backend/telemetry/vessel";
+import { formatHistoryEventTimestamp } from "@/backend/telemetry/time-api";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -64,10 +65,10 @@ export async function GET(request: NextRequest) {
 
     // Date range constraint
     if (startDate) {
-      conditions.push(gte(machineReadings.receivedAt, new Date(startDate)));
+      conditions.push(gte(machineReadings.terminalTime, new Date(startDate)));
     }
     if (endDate) {
-      conditions.push(lte(machineReadings.receivedAt, new Date(endDate)));
+      conditions.push(lte(machineReadings.terminalTime, new Date(endDate)));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -77,8 +78,9 @@ export async function GET(request: NextRequest) {
       id: machineReadings.id,
       serialNumber: machineReadings.serialNumber,
       hospitalName: masterHospitals.hospitalName,
+      province: masterHospitals.province,
       status: machines.status,
-      timestamp: machineReadings.receivedAt,
+      timestamp: machineReadings.terminalTime,
       oxygenPurity: machineReadings.oxygenPurity,
       tankPressure: machineReadings.tankPressure,
       vessel1: machineReadings.vessel1,
@@ -92,7 +94,7 @@ export async function GET(request: NextRequest) {
     .leftJoin(machines, eq(machineReadings.machineId, machines.id))
     .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
     .where(whereClause)
-    .orderBy(desc(machineReadings.receivedAt))
+    .orderBy(desc(machineReadings.terminalTime))
     .limit(limit)
     .offset(offset);
 
@@ -108,7 +110,7 @@ export async function GET(request: NextRequest) {
       id: entry.id,
       stationId: entry.serialNumber,
       stationName: entry.hospitalName || "Not Assigned",
-      timestamp: entry.timestamp ? new Date(entry.timestamp).toLocaleString("id-ID") : "Unknown",
+      timestamp: formatHistoryEventTimestamp(entry.timestamp, entry.province),
       oxygenPurity: entry.oxygenPurity ? parseFloat(entry.oxygenPurity) : 0,
       tankPressure: entry.tankPressure ? parseFloat(entry.tankPressure) : 0,
       vessel1: parseNullableMetric(entry.vessel1),

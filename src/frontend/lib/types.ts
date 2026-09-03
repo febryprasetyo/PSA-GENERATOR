@@ -21,6 +21,7 @@ export type Station = {
   runningTimeHours: number;
   status: MachineStatus;
   lastUpdate: string;
+  eventTimestamp?: string;
   region: string;
   areaId?: string | null;
   areaName?: string | null;
