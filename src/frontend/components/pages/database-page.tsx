@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/frontend/components/layout/page-header";
 import { ExportModal } from "@/frontend/components/modals/export-modal";
+import { NullableMetric } from "@/frontend/components/ui/nullable-metric";
 
 const statusOptions = ["all", "online", "offline"] as const;
 
@@ -13,7 +14,7 @@ export default function DatabasePage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
 
-  const [data, setData] = useState<{ entries: Record<string, string | number>[]; total: number } | null>(null);
+  const [data, setData] = useState<{ entries: Record<string, string | number | null>[]; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -244,6 +245,8 @@ export default function DatabasePage() {
                     <th className="px-4 py-3">Flow meter 2</th>
                     <th className="px-4 py-3">Oxygen Purity</th>
                     <th className="px-4 py-3">Oxygen tank</th>
+                    <th className="px-4 py-3">Vessel 1 (MPa)</th>
+                    <th className="px-4 py-3">Vessel 2 (MPa)</th>
                     <th className="px-4 py-3">Total Flow</th>
                     <th className="px-4 py-3">Running Time</th>
                     <th className="px-4 py-3">Status</th>
@@ -252,12 +255,12 @@ export default function DatabasePage() {
                 <tbody className="divide-y divide-dashboard-border relative">
                   {isLoading && !data && (
                     <tr>
-                      <td colSpan={10} className="px-4 py-8 text-center text-sm text-dashboard-muted">
+                      <td colSpan={12} className="px-4 py-8 text-center text-sm text-dashboard-muted">
                         Memuat data...
                       </td>
                     </tr>
                   )}
-                  {entries.map((entry: Record<string, string | number>, idx: number) => (
+                  {entries.map((entry: Record<string, string | number | null>, idx: number) => (
                     <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4 font-semibold text-dashboard-text">{(page - 1) * limit + idx + 1}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.stationName} <span className="block text-xs text-dashboard-muted">{entry.stationId}</span></td>
@@ -266,6 +269,8 @@ export default function DatabasePage() {
                       <td className="px-4 py-4 text-dashboard-text">{entry.boosterFlow}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.oxygenPurity}%</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.tankPressure} bar</td>
+                      <td className="px-4 py-4 text-dashboard-text"><NullableMetric value={entry.vessel1 as number | null} suffix="MPa" /></td>
+                      <td className="px-4 py-4 text-dashboard-text"><NullableMetric value={entry.vessel2 as number | null} suffix="MPa" /></td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.totalFlow}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.runningTime}</td>
                       <td className="px-4 py-4">
@@ -279,7 +284,7 @@ export default function DatabasePage() {
                   ))}
                   {!isLoading && entries.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="px-4 py-8 text-center text-sm text-dashboard-muted">
+                      <td colSpan={12} className="px-4 py-8 text-center text-sm text-dashboard-muted">
                         {error ? "Terjadi kesalahan saat memuat data." : "Tidak ada data riwayat yang ditemukan."}
                       </td>
                     </tr>

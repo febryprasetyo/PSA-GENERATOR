@@ -17,6 +17,7 @@ import {
 import { Badge, levelStyles, statusStyles } from "@/frontend/components/ui/badge";
 import { FilterSelect } from "@/frontend/components/ui/filter-select";
 import { SortButton } from "@/frontend/components/ui/sort-button";
+import { NullableMetric } from "@/frontend/components/ui/nullable-metric";
 import type { AreaFilter, HealthFilter, SortKey, StatusFilter } from "@/frontend/lib/dashboard-types";
 import { formatNumber, statusLabel } from "@/frontend/lib/metrics";
 import type { HealthLevel, StationWithMetrics } from "@/frontend/lib/types";
@@ -115,7 +116,7 @@ export function StationsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[1180px] w-full border-collapse">
+        <table className="min-w-[1380px] w-full border-collapse">
           <thead className="bg-slate-50">
             <tr className="border-b border-dashboard-border">
               <th className="px-4 py-3 text-left"><SortButton label="Nama Rumah Sakit" column="hospitalName" sortKey={sortKey} onSort={onSort} /></th>
@@ -126,6 +127,8 @@ export function StationsTable({
               <th className="px-4 py-3 text-right"><SortButton label="Total Flow (Nm³/h)" column="totalFlow" sortKey={sortKey} onSort={onSort} /></th>
               <th className="px-4 py-3 text-right"><SortButton label="Oxygen Purity" column="oxygenPurity" sortKey={sortKey} onSort={onSort} /></th>
               <th className="px-4 py-3 text-right"><SortButton label="Tekanan O2 tank" column="tankPressure" sortKey={sortKey} onSort={onSort} /></th>
+              <th className="px-4 py-3 text-right">Vessel 1 (MPa)</th>
+              <th className="px-4 py-3 text-right">Vessel 2 (MPa)</th>
               <th className="px-4 py-3 text-center"><SortButton label="Status" column="status" sortKey={sortKey} onSort={onSort} /></th>
               <th className="px-4 py-3 text-center"><SortButton label="Health" column="healthScore" sortKey={sortKey} onSort={onSort} /></th>
             </tr>
@@ -212,6 +215,8 @@ function StationRow({ station, showArea }: { station: StationWithMetrics; showAr
       <td className="px-4 py-4 text-right">
         <Badge className={levelStyles[station.pressureLevel]}>{station.tankPressure} bar</Badge>
       </td>
+      <td className="px-4 py-4 text-right text-sm text-slate-700"><NullableMetric value={station.vessel1} suffix="MPa" /></td>
+      <td className="px-4 py-4 text-right text-sm text-slate-700"><NullableMetric value={station.vessel2} suffix="MPa" /></td>
       <td className="px-4 py-4 text-center">
         <Badge className={statusStyles[station.status]}><StatusIcon size={13} />{statusLabel(station.status)}</Badge>
       </td>
