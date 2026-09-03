@@ -85,5 +85,6 @@ describe("Export API (/api/history/export)", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/csv");
+    expect(redis.get).toHaveBeenCalledWith(expect.stringContaining("export:v3:30m"));
   });
 });

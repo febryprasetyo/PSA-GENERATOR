@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCsvHeader, getThirtyMinuteBucketStart, shouldIncludeSerialNumber } from "@/app/api/history/export/export-query";
+import { buildCsvHeader, formatNullableCsvMetric, getThirtyMinuteBucketStart, shouldIncludeSerialNumber } from "@/app/api/history/export/export-query";
 
 describe("30-minute export", () => {
   it("aligns timestamps to half-hour boundaries", () => {
@@ -12,5 +12,29 @@ describe("30-minute export", () => {
     expect(shouldIncludeSerialNumber([1, 2])).toBe(true);
     expect(buildCsvHeader(false)).not.toContain("Serial Number");
     expect(buildCsvHeader(true)).toContain("Serial Number");
+  });
+
+  it("includes Vessel columns after tank pressure", () => {
+    expect(buildCsvHeader(false)).toEqual([
+      "No",
+      "Nama Rumah Sakit",
+      "Interval Mulai (30 Menit)",
+      "Oxygen Purity (%)",
+      "Tank Pressure (bar)",
+      "Vessel 1 (MPa)",
+      "Vessel 2 (MPa)",
+      "Flow Meter Sentral (Nm³/h)",
+      "Flow Meter Booster (Nm³/h)",
+      "Total Flow (Nm³/h)",
+      "Running Time (Jam)",
+    ]);
+  });
+
+  it("exports missing Vessel values as empty cells and preserves zero", () => {
+    expect(formatNullableCsvMetric(null)).toBe("");
+    expect(formatNullableCsvMetric(undefined)).toBe("");
+    expect(formatNullableCsvMetric("invalid")).toBe("");
+    expect(formatNullableCsvMetric(0)).toBe("0.00");
+    expect(formatNullableCsvMetric("1.25")).toBe("1.25");
   });
 });

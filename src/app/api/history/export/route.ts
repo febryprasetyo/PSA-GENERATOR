@@ -4,7 +4,7 @@ import { machineReadings, machines, masterHospitals } from "@/backend/db/schema"
 import { requireAuth } from "@/backend/auth/guard";
 import { eq, like, or, desc, and, isNull, isNotNull, gte, lte, avg, count, inArray, sql } from "drizzle-orm";
 import { redis } from "@/backend/redis";
-import { buildCsvHeader, shouldIncludeSerialNumber } from "./export-query";
+import { buildCsvHeader, formatNullableCsvMetric, shouldIncludeSerialNumber } from "./export-query";
 import { resolveHospitalScope } from "@/backend/auth/client-scope";
 
 export async function GET(request: NextRequest) {
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     const whereClause = and(...conditions);
 
     // Caching Key Strategy (Redis)
-    const cacheKey = `export:v2:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
+    const cacheKey = `export:v3:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
 
     try {
       const cachedCsv = await redis.get(cacheKey);
@@ -117,6 +117,8 @@ export async function GET(request: NextRequest) {
       bucketStart,
       oxygenPurity: avg(machineReadings.oxygenPurity),
       tankPressure: avg(machineReadings.tankPressure),
+      vessel1: avg(machineReadings.vessel1),
+      vessel2: avg(machineReadings.vessel2),
       centralFlow: avg(machineReadings.flowSentral),
       boosterFlow: avg(machineReadings.flowBooster),
       totalFlow: avg(machineReadings.totalFlow),
@@ -167,6 +169,8 @@ export async function GET(request: NextRequest) {
                 `"${formattedTime}"`,
                 item.oxygenPurity ? parseFloat(item.oxygenPurity).toFixed(2) : "0.00",
                 item.tankPressure ? parseFloat(item.tankPressure).toFixed(2) : "0.00",
+                formatNullableCsvMetric(item.vessel1),
+                formatNullableCsvMetric(item.vessel2),
                 item.centralFlow ? parseFloat(item.centralFlow).toFixed(2) : "0.00",
                 item.boosterFlow ? parseFloat(item.boosterFlow).toFixed(2) : "0.00",
                 item.totalFlow ? parseFloat(item.totalFlow).toFixed(2) : "0.00",

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, Download, Eye, AlertCircle, CheckCircle2, Calendar, HardDrive, RefreshCw } from "lucide-react";
+import { NullableMetric } from "@/frontend/components/ui/nullable-metric";
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ interface PreviewEntry {
   timestamp: string;
   oxygenPurity: number;
   tankPressure: number;
+  vessel1: number | null;
+  vessel2: number | null;
   centralFlow: number;
   boosterFlow: number;
   totalFlow: number;
@@ -413,6 +416,8 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
                         <th className="px-3 py-2">Waktu</th>
                         <th className="px-3 py-2">O2 Purity</th>
                         <th className="px-3 py-2">Tank Press</th>
+                        <th className="px-3 py-2">Vessel 1 (MPa)</th>
+                        <th className="px-3 py-2">Vessel 2 (MPa)</th>
                         <th className="px-3 py-2">Flow Sentral</th>
                         <th className="px-3 py-2">Total Flow</th>
                       </tr>
@@ -424,6 +429,8 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
                           <td className="px-3 py-2 text-dashboard-muted">{entry.timestamp}</td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.oxygenPurity}%</td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.tankPressure} bar</td>
+                          <td className="px-3 py-2 text-dashboard-text"><NullableMetric value={entry.vessel1} suffix="MPa" /></td>
+                          <td className="px-3 py-2 text-dashboard-text"><NullableMetric value={entry.vessel2} suffix="MPa" /></td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.centralFlow} L/min</td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.totalFlow}</td>
                         </tr>
