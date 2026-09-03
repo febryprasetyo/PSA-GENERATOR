@@ -6,13 +6,14 @@
 
 ## 1. Objective
 
-Correct telemetry timestamps that currently shift because PLC `_terminalTime` values have no timezone offset. Preserve the machine-provided wall-clock time when it is valid, normalize storage to an absolute UTC instant, and display/export the timestamp in each hospital's local Indonesian timezone without adding repeated timezone text to CSV rows.
+Correct telemetry timestamps that currently shift because PLC `_terminalTime` values have no timezone offset. Preserve the machine-provided wall-clock time exactly in its hospital timezone and display/export that same local clock without converting it to WIB or adding repeated timezone text to CSV rows. PostgreSQL may represent the value internally as an absolute instant, but that storage detail must never change the machine's displayed local clock.
 
 ## 2. Timestamp Contract
 
 - `_terminalTime` remains the preferred event time when present and valid.
 - Offset-aware ISO timestamps are treated as absolute instants and are not reinterpreted.
 - Offset-free machine timestamps are interpreted in the hospital's local timezone.
+- Machine timestamps are never normalized to the server's WIB timezone.
 - PostgreSQL `timestamp with time zone` columns continue storing absolute instants.
 - `received_at` remains server receipt time. It is used for heartbeat/connectivity, validation, and fallback, never as a replacement for a valid machine event time.
 - Invalid or missing machine time falls back to `received_at`.
@@ -28,7 +29,7 @@ A single backend resolver maps normalized hospital province names to one of thes
 
 The final implementation mapping must cover all Indonesian provinces currently supported by hospital records. Province matching is case-insensitive and whitespace-normalized. An unknown or empty province uses `Asia/Jakarta` and emits a warning with hospital and machine identifiers so the metadata can be corrected.
 
-Timezone resolution belongs on the machine/hospital context, not in generic date formatting. The resolved zone is not added to reading rows or CSV output.
+Timezone resolution belongs on the machine/hospital context, not in generic date formatting. The resolved zone is not added to reading rows or CSV output. The OS timezone `Asia/Jakarta` exists only for server/database administration and is not a telemetry conversion rule.
 
 ## 4. Ingestion
 
@@ -37,7 +38,7 @@ The MQTT listener obtains the machine's hospital timezone before parsing an offs
 Parsing rules:
 
 1. If `_terminalTime` contains `Z` or an explicit numeric offset, parse it as an absolute instant.
-2. If it is a supported offset-free PLC format, interpret its date and clock fields in the resolved hospital timezone and convert to a JavaScript `Date`/UTC instant.
+2. If it is a supported offset-free PLC format, interpret its date and clock fields in the resolved hospital timezone. The stored instant must round-trip to exactly the original PLC wall-clock fields when formatted in that same hospital timezone.
 3. If it is missing or invalid, use receipt time.
 4. Compare the normalized event instant with receipt time. If the absolute difference exceeds a configurable-safe fixed threshold selected in implementation, log a warning but retain the valid machine time.
 
@@ -119,7 +120,7 @@ Tests cover:
 
 - A valid machine timestamp is never replaced by receipt time.
 - Offset-free PLC time is interpreted in the hospital's local timezone.
-- Stored timestamps represent correct absolute instants.
+- Stored timestamps round-trip to the original machine wall clock in the hospital timezone and are never converted to WIB for presentation.
 - Dashboard, Datalogger, preview, and CSV show local hospital time as `DD/MM/YYYY HH:mm:ss`.
 - CSV contains `Timestamp` and no zone column/suffix.
 - Multi-machine CSV contains `Nama Mesin`.
