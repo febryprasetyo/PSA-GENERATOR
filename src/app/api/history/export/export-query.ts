@@ -4,7 +4,7 @@ export function getThirtyMinuteBucketStart(date: Date): Date {
   return value;
 }
 
-export function shouldIncludeSerialNumber(machineCounts: number[]): boolean {
+export function shouldIncludeMachineName(machineCounts: number[]): boolean {
   return machineCounts.some((count) => count > 1);
 }
 
@@ -14,12 +14,12 @@ export function formatNullableCsvMetric(value: string | number | null | undefine
   return Number.isFinite(parsed) ? parsed.toFixed(2) : "";
 }
 
-export function buildCsvHeader(includeSerialNumber: boolean): string[] {
+export function buildCsvHeader(includeMachineName: boolean): string[] {
   return [
     "No",
-    ...(includeSerialNumber ? ["Serial Number"] : []),
+    ...(includeMachineName ? ["Nama Mesin"] : []),
     "Nama Rumah Sakit",
-    "Interval Mulai (30 Menit)",
+    "Timestamp",
     "Oxygen Purity (%)",
     "Tank Pressure (bar)",
     "Vessel 1 (MPa)",

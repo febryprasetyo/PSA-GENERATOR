@@ -4,7 +4,7 @@ import { machineReadings, machines, masterHospitals } from "@/backend/db/schema"
 import { requireAuth } from "@/backend/auth/guard";
 import { eq, like, or, desc, and, isNull, isNotNull, gte, lte, avg, count, inArray, sql } from "drizzle-orm";
 import { redis } from "@/backend/redis";
-import { buildCsvHeader, formatNullableCsvMetric, shouldIncludeSerialNumber } from "./export-query";
+import { buildCsvHeader, formatNullableCsvMetric, shouldIncludeMachineName } from "./export-query";
 import { resolveHospitalScope } from "@/backend/auth/client-scope";
 
 export async function GET(request: NextRequest) {
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     const whereClause = and(...conditions);
 
     // Caching Key Strategy (Redis)
-    const cacheKey = `export:v3:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
+    const cacheKey = `export:v4:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
 
     try {
       const cachedCsv = await redis.get(cacheKey);
@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
       hospitalName: masterHospitals.hospitalName,
       machineId: machines.id,
       serialNumber: machines.serialNumber,
+      machineName: machines.machineName,
       bucketStart,
       oxygenPurity: avg(machineReadings.oxygenPurity),
       tankPressure: avg(machineReadings.tankPressure),
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(machines, eq(machineReadings.machineId, machines.id))
       .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
       .where(whereClause)
-      .groupBy(masterHospitals.id, masterHospitals.hospitalName, machines.id, machines.serialNumber, bucketStart)
+      .groupBy(masterHospitals.id, masterHospitals.hospitalName, machines.id, machines.serialNumber, machines.machineName, bucketStart)
       .orderBy(desc(bucketStart));
 
     const representedHospitalIds = [...new Set(groupedRows.map((row) => row.hospitalId).filter((id): id is string => Boolean(id)))];
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
       hospitalId: machines.clientId,
       value: count(),
     }).from(machines).where(and(inArray(machines.clientId, representedHospitalIds), isNull(machines.deletedAt))).groupBy(machines.clientId) : [];
-    const includeSerialNumber = shouldIncludeSerialNumber(machineCounts.map((item) => Number(item.value)));
+    const includeMachineName = shouldIncludeMachineName(machineCounts.map((item) => Number(item.value)));
 
     // Streaming CSV output with UTF-8 BOM
     const encoder = new TextEncoder();
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest) {
           controller.enqueue(encoder.encode("\uFEFF"));
 
           // CSV Header
-          const header = buildCsvHeader(includeSerialNumber).map((h) => `"${h}"`).join(",") + "\n";
+          const header = buildCsvHeader(includeMachineName).map((h) => `"${h}"`).join(",") + "\n";
 
           controller.enqueue(encoder.encode(header));
 
@@ -164,7 +165,7 @@ export async function GET(request: NextRequest) {
               
               const row = [
                 rowNumber++,
-                ...(includeSerialNumber ? [`"${(item.serialNumber || "").replace(/"/g, '""')}"`] : []),
+                ...(includeMachineName ? [`"${(item.machineName || "").replace(/"/g, '""')}"`] : []),
                 `"${(item.hospitalName || "Not Assigned").replace(/"/g, '""')}"`,
                 `"${formattedTime}"`,
                 item.oxygenPurity ? parseFloat(item.oxygenPurity).toFixed(2) : "0.00",
