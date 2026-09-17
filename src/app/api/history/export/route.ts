@@ -80,11 +80,11 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Date range constraint
-    const localTerminalTime = localTelemetryTimeSql(machineReadings.terminalTime, masterHospitals.province);
+    const localReceiptTime = localTelemetryTimeSql(machineReadings.receivedAt, masterHospitals.province);
     const startLocal = startDateParam?.replace("T", " ").replace(/Z$/, "") || startDate.toISOString().replace("T", " ").replace("Z", "");
     const endLocal = endDateParam?.replace("T", " ").replace(/Z$/, "") || endDate.toISOString().replace("T", " ").replace("Z", "");
-    conditions.push(sql`${localTerminalTime} >= ${startLocal}::timestamp`);
-    conditions.push(sql`${localTerminalTime} <= ${endLocal}::timestamp`);
+    conditions.push(sql`${localReceiptTime} >= ${startLocal}::timestamp`);
+    conditions.push(sql`${localReceiptTime} <= ${endLocal}::timestamp`);
 
     // 5. Exclude soft-deleted machines & unassigned machines
     conditions.push(isNull(machines.deletedAt));
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     const whereClause = and(...conditions);
 
     // Caching Key Strategy (Redis)
-    const cacheKey = `export:v5:30m:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
+    const cacheKey = `export:v6:30m:receipt-time:${userRole}:${userClientId || "all"}:${hospitalIdParam || "all"}:${serialNumberParam || "all"}:${startDate.toISOString()}:${endDate.toISOString()}:${query || "none"}`;
 
     try {
       const cachedCsv = await redis.get(cacheKey);
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       console.warn("[Export API] Redis cache read error:", redisErr);
     }
 
-    const bucketStart = sql<Date>`date_bin('30 minutes', ${machineReadings.terminalTime}, TIMESTAMPTZ '1970-01-01 00:00:00+00')`;
+    const bucketStart = sql<Date>`date_bin('30 minutes', ${machineReadings.receivedAt}, TIMESTAMPTZ '1970-01-01 00:00:00+00')`;
     const groupedRows = await db.select({
       hospitalId: masterHospitals.id,
       hospitalName: masterHospitals.hospitalName,

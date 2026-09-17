@@ -6,7 +6,7 @@ function formatEventTimestamp(value: Date | string | number | null | undefined, 
 }
 
 export const formatDashboardEventTimestamp = formatEventTimestamp;
-export const formatHistoryEventTimestamp = formatEventTimestamp;
+export const formatHistoryReceiptTimestamp = formatEventTimestamp;
 
 export function formatDashboardMachineEventTimestamp(
   rawPayload: unknown,

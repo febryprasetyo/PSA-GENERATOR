@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/frontend/components/layout/page-header";
 import { ExportModal } from "@/frontend/components/modals/export-modal";
 import { NullableMetric } from "@/frontend/components/ui/nullable-metric";
+import { getIndonesiaTimeZoneLabel } from "@/frontend/lib/indonesia-time-label";
 
 const statusOptions = ["all", "online", "offline"] as const;
 
@@ -260,7 +261,11 @@ export default function DatabasePage() {
                     <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4 font-semibold text-dashboard-text">{(page - 1) * limit + idx + 1}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.stationName} <span className="block text-xs text-dashboard-muted">{entry.stationId}</span></td>
-                      <td className="px-4 py-4 text-dashboard-muted">{entry.timestamp}</td>
+                      <td className="px-4 py-4 text-dashboard-muted">
+                        {entry.timestamp} {getIndonesiaTimeZoneLabel(
+                          typeof entry.province === "string" ? entry.province : null,
+                        )}
+                      </td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.centralFlow}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.boosterFlow}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.oxygenPurity}%</td>

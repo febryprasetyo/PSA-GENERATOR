@@ -5,7 +5,7 @@ import { requireAuth } from "@/backend/auth/guard";
 import { eq, like, or, desc, sql, and, isNull, isNotNull } from "drizzle-orm";
 import { resolveHospitalScope } from "@/backend/auth/client-scope";
 import { parseNullableMetric } from "@/backend/telemetry/vessel";
-import { formatHistoryEventTimestamp } from "@/backend/telemetry/time-api";
+import { formatHistoryReceiptTimestamp } from "@/backend/telemetry/time-api";
 import { localTelemetryTimeSql } from "@/backend/telemetry/timezone-sql";
 
 export async function GET(request: NextRequest) {
@@ -66,12 +66,12 @@ export async function GET(request: NextRequest) {
 
     // Date range constraint
     if (startDate) {
-      const localTerminalTime = localTelemetryTimeSql(machineReadings.terminalTime, masterHospitals.province);
-      conditions.push(sql`${localTerminalTime} >= ${startDate.replace("T", " ").replace(/Z$/, "")}::timestamp`);
+      const localReceiptTime = localTelemetryTimeSql(machineReadings.receivedAt, masterHospitals.province);
+      conditions.push(sql`${localReceiptTime} >= ${startDate.replace("T", " ").replace(/Z$/, "")}::timestamp`);
     }
     if (endDate) {
-      const localTerminalTime = localTelemetryTimeSql(machineReadings.terminalTime, masterHospitals.province);
-      conditions.push(sql`${localTerminalTime} <= ${endDate.replace("T", " ").replace(/Z$/, "")}::timestamp`);
+      const localReceiptTime = localTelemetryTimeSql(machineReadings.receivedAt, masterHospitals.province);
+      conditions.push(sql`${localReceiptTime} <= ${endDate.replace("T", " ").replace(/Z$/, "")}::timestamp`);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       hospitalName: masterHospitals.hospitalName,
       province: masterHospitals.province,
       status: machines.status,
-      timestamp: machineReadings.terminalTime,
+      timestamp: machineReadings.receivedAt,
       oxygenPurity: machineReadings.oxygenPurity,
       tankPressure: machineReadings.tankPressure,
       vessel1: machineReadings.vessel1,
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
     .leftJoin(machines, eq(machineReadings.machineId, machines.id))
     .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
     .where(whereClause)
-    .orderBy(desc(machineReadings.terminalTime))
+    .orderBy(desc(machineReadings.receivedAt))
     .limit(limit)
     .offset(offset);
 
@@ -113,7 +113,8 @@ export async function GET(request: NextRequest) {
       id: entry.id,
       stationId: entry.serialNumber,
       stationName: entry.hospitalName || "Not Assigned",
-      timestamp: formatHistoryEventTimestamp(entry.timestamp, entry.province),
+      timestamp: formatHistoryReceiptTimestamp(entry.timestamp, entry.province),
+      province: entry.province,
       oxygenPurity: entry.oxygenPurity ? parseFloat(entry.oxygenPurity) : 0,
       tankPressure: entry.tankPressure ? parseFloat(entry.tankPressure) : 0,
       vessel1: parseNullableMetric(entry.vessel1),

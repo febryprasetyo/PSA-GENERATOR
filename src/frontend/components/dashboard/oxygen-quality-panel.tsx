@@ -14,7 +14,7 @@ export function OxygenQualityPanel({
     <div className="panel p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-base font-bold text-dashboard-text">Kualitas Oksigen Bermasalah</h2>
+          <h2 className="text-base font-bold text-dashboard-text">Kualitas Oksigen</h2>
           <p className="mt-1 text-sm text-dashboard-muted">Mesin aktif dengan purity O2 di bawah ambang normal. Unit offline tidak dihitung.</p>
         </div>
         <Badge className={levelStyles[summary.critical > 0 ? "critical" : summary.warning > 0 ? "warning" : "normal"]}>{issues.length} unit</Badge>
