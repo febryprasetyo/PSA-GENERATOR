@@ -11,6 +11,7 @@ import { averageSamples, getTenMinuteBucketStart, type BufferedSample } from "./
 import { parseNullableMetricString } from "../telemetry/vessel";
 import { resolveDailyBaseline } from "../telemetry/state";
 import { parseMachineTimestamp, resolveHospitalTimeZone } from "../telemetry/timezone";
+import { getCmcRegisteredSerials, isUnassignedAutomaticMachine } from "../machines/cmcRegistration";
 
 let MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || (process.env.MQTT_HOST ? `mqtt://${process.env.MQTT_HOST}:1883` : "mqtt://localhost:1883");
 if (MQTT_BROKER_URL && !MQTT_BROKER_URL.startsWith("mqtt://") && !MQTT_BROKER_URL.startsWith("mqtts://") && !MQTT_BROKER_URL.startsWith("ws://") && !MQTT_BROKER_URL.startsWith("wss://")) {
@@ -87,11 +88,19 @@ async function startListener() {
       const existingMachines = await db.select({
         id: machines.id,
         clientId: machines.clientId,
+        serialNumber: machines.serialNumber,
+        machineName: machines.machineName,
         province: masterHospitals.province,
       }).from(machines)
         .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
         .where(eq(machines.serialNumber, serialNumber))
         .limit(1);
+
+      const existingMachine = existingMachines[0];
+      if (!existingMachine || isUnassignedAutomaticMachine(existingMachine)) {
+        const cmcSerials = await getCmcRegisteredSerials([serialNumber]);
+        if (cmcSerials.has(serialNumber)) return;
+      }
       
       if (existingMachines.length === 0) {
         if (!isAutoRegisterSn()) {

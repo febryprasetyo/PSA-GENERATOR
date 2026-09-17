@@ -25,6 +25,7 @@ module.exports = {
         NODE_ENV: "production",
         PORT: 3300,
         ...envMgm,
+        CMC_DATABASE_URL: envMgm.CMC_DATABASE_URL || envCmc.DATABASE_URL,
       },
       log_date_format: "YYYY-MM-DD HH:mm Z",
     },
@@ -36,6 +37,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         ...envMgm,
+        CMC_DATABASE_URL: envMgm.CMC_DATABASE_URL || envCmc.DATABASE_URL,
       },
       log_date_format: "YYYY-MM-DD HH:mm Z",
     },

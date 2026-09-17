@@ -87,6 +87,18 @@ To start the background MQTT listener for data ingestion (if running as a separa
 pnpm run mqtt
 ```
 
+For MGM/CMC installations, set `CMC_DATABASE_URL` on the MGM dashboard and MQTT
+listener to a connection with read access to the CMC `machines` table. The PM2
+configuration supplies it from `.env.cmc` automatically unless overridden in
+`.env.mgm`. Apply this environment to both MGM processes when deploying.
+Active CMC serial numbers are excluded from MGM Sync and MQTT auto-registration.
+Existing unassigned `Auto-Registered` / `Auto-Synced` duplicates are hidden in the
+MGM device list and dashboard without deleting their records. Assigned or manually named MGM
+machines are preserved. Soft-deleted CMC registrations no longer exclude a serial.
+If the configured CMC database is unavailable, the affected request/message fails
+without registering a duplicate. Without `CMC_DATABASE_URL`, standalone behavior
+is unchanged; cross-brand filtering is disabled.
+
 The listener keeps realtime latest values on every message and persists retry-safe averages on aligned 10-minute intervals. CSV exports aggregate those records into aligned 30-minute averages.
 
 After pulling a release that introduces Area management, apply the additive schema before starting the application:

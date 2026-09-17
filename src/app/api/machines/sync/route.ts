@@ -5,8 +5,9 @@ import { requireAuth } from "@/backend/auth/guard";
 import { redis } from "@/backend/redis";
 import { eq } from "drizzle-orm";
 import { getSyncRedisPrefix } from "@/shared/config";
+import { getCmcRegisteredSerials } from "@/backend/machines/cmcRegistration";
 
-export async function POST(request: Request) {
+export async function POST() {
   const auth = await requireAuth();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -20,13 +21,12 @@ export async function POST(request: Request) {
     const prefix = prefixStr.endsWith(":") ? prefixStr : `${prefixStr}:`;
     const searchPattern = `${prefix}machine:latest:*`;
     const keys = await redis.keys(searchPattern);
+    const serialNumbers = keys.map((key) => key.slice(`${prefix}machine:latest:`.length)).filter(Boolean);
+    const cmcSerials = await getCmcRegisteredSerials(serialNumbers);
     let syncedCount = 0;
 
-    for (const key of keys) {
-      // key format: <prefix>machine:latest:SERIAL
-      const serialNumber = key.replace(`${prefix}machine:latest:`, "");
-      
-      if (!serialNumber) continue;
+    for (const serialNumber of serialNumbers) {
+      if (cmcSerials.has(serialNumber)) continue;
 
       // 2. Check if it exists in DB
       const existing = await db.select({ id: machines.id, deletedAt: machines.deletedAt }).from(machines).where(eq(machines.serialNumber, serialNumber)).limit(1);

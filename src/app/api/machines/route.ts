@@ -6,6 +6,7 @@ import { eq, isNull, and } from "drizzle-orm";
 import { redis } from "@/backend/redis";
 import { getMachineLatestRedisKey } from "@/shared/config";
 import { resolveHeartbeatStatus } from "@/backend/telemetry/state";
+import { getCmcRegisteredSerials, isUnassignedAutomaticMachine } from "@/backend/machines/cmcRegistration";
 
 export async function GET() {
   const auth = await requireAuth();
@@ -59,7 +60,13 @@ export async function GET() {
       .leftJoin(masterHospitals, eq(machines.clientId, masterHospitals.id))
       .where(isNull(machines.deletedAt));
     }
-    const updatedMachines = await Promise.all(allMachines.map(async (machine) => {
+    const cmcSerials = await getCmcRegisteredSerials(
+      allMachines.filter(isUnassignedAutomaticMachine).map((machine) => machine.serialNumber),
+    );
+    const visibleMachines = allMachines.filter((machine) =>
+      !isUnassignedAutomaticMachine(machine) || !cmcSerials.has(machine.serialNumber),
+    );
+    const updatedMachines = await Promise.all(visibleMachines.map(async (machine) => {
       const latestDataStr = await redis.get(getMachineLatestRedisKey(machine.serialNumber));
       let heartbeat: string | Date | null = machine.lastSeenAt;
       if (latestDataStr) {

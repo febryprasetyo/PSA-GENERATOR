@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCmcRegisteredSerials, isUnassignedAutomaticMachine } from "@/backend/machines/cmcRegistration";
 import { db } from "@/backend/db";
 import { machines, masterHospitals, machineLatestReadings, areaHospitals, areas } from "@/backend/db/schema";
 import { requireAuth } from "@/backend/auth/guard";
@@ -26,6 +27,8 @@ export async function GET(request: Request) {
     const baseQuery = db.select({
       id: machines.serialNumber, // Map serialNumber to id for frontend compatibility
       serialNumber: machines.serialNumber,
+      machineName: machines.machineName,
+      clientId: machines.clientId,
       hospitalName: masterHospitals.hospitalName,
       province: masterHospitals.province,
       city: masterHospitals.city,
@@ -64,6 +67,13 @@ export async function GET(request: Request) {
     } else {
       allMachines = await baseQuery.where(and(isNull(machines.deletedAt), areaCondition));
     }
+
+    const cmcSerials = await getCmcRegisteredSerials(
+      allMachines.filter(isUnassignedAutomaticMachine).map((machine) => machine.serialNumber),
+    );
+    allMachines = allMachines.filter((machine) =>
+      !isUnassignedAutomaticMachine(machine) || !cmcSerials.has(machine.serialNumber),
+    );
 
     interface DashboardMachine {
       serialNumber: string;

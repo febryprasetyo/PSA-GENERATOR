@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Master Area dinamis dengan relasi satu Area ke banyak Rumah Sakit dan satu Area maksimum per Rumah Sakit.
 - Filter Area dan status belum memiliki Area pada tabel dashboard.
+- Konfigurasi `CMC_DATABASE_URL` untuk memeriksa registrasi aktif CMC dari instalasi MGM, dengan fallback PM2 dari `.env.cmc` dan panduan konfigurasi pada README.
+- Pengujian regresi pemisahan mesin MGM/CMC pada lookup registrasi, sinkronisasi, daftar mesin, dashboard, dan MQTT listener.
 
 ### Changed
 - Purity `≥90%` ditampilkan Optimal (hijau) dan `<90%` Kritis (kuning).
@@ -21,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Aksi create Rumah Sakit kembali tampil pada header master data dan nama divalidasi setelah trimming.
+- Sinkronisasi dan auto-registrasi MQTT MGM melewati serial yang masih terdaftar aktif di CMC untuk mencegah duplikasi lintas brand.
+- Duplikat CMC berlabel `Auto-Registered` atau `Auto-Synced` yang belum terhubung ke Rumah Sakit disembunyikan dari daftar mesin dan dashboard MGM tanpa menghapus record; mesin yang sudah terhubung atau diberi nama manual tetap ditampilkan.
+- Kegagalan lookup database CMC menghentikan request atau pemrosesan pesan terkait agar duplikat tidak terdaftar. Registrasi CMC yang sudah dihapus secara soft-delete tidak memblokir serial; instalasi tanpa `CMC_DATABASE_URL` tetap berjalan tanpa filter lintas brand.
 
 ## [1.2.0] - 2026-07-27
 
