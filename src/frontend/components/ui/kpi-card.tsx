@@ -14,17 +14,17 @@ export function KpiCard({
   colorClass: string;
 }) {
   return (
-    <div className="min-w-[180px] flex-1 rounded-lg border border-dashboard-border bg-white p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold leading-none text-dashboard-text">{value}</p>
+    <div className="min-w-0 w-full flex-1 rounded-lg border border-dashboard-border bg-white p-3.5 sm:p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] sm:text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">{label}</p>
+          <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold leading-none text-dashboard-text truncate">{value}</p>
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-md ${colorClass}`}>
-          <Icon size={20} />
+        <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-md ${colorClass}`}>
+          <Icon size={18} className="sm:size-5" />
         </div>
       </div>
-      <p className="mt-3 text-sm text-dashboard-muted">{detail}</p>
+      <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-dashboard-muted truncate">{detail}</p>
     </div>
   );
 }

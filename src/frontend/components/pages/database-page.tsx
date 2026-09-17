@@ -137,36 +137,34 @@ export default function DatabasePage() {
       />
 
       <div className="panel overflow-hidden mt-6">
-        <div className="border-b border-dashboard-border bg-white px-6 py-5">
+        <div className="border-b border-dashboard-border bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold text-dashboard-text">Riwayat Data Mesin</h2>
-              <div className="flex flex-wrap gap-3 items-center">
+            <h2 className="text-base sm:text-lg font-semibold text-dashboard-text">Riwayat Data Mesin</h2>
+              <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(true)}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Export CSV (Excel)
+                  Export CSV
                 </button>
                 <button
                   type="button"
                   onClick={() => setRefreshKey(prev => prev + 1)}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-dashboard-primary px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-dashboard-primary px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   Refresh Data
                 </button>
-                <div className="rounded-lg border border-dashboard-border bg-slate-50 px-4 py-2.5 text-sm text-dashboard-text">
-                  Total entri ditemukan: <span className="font-semibold">{isLoading && !data ? "..." : total}</span>
+                <div className="rounded-lg border border-dashboard-border bg-slate-50 px-3 py-2 text-xs sm:text-sm text-dashboard-text">
+                  Total entri: <span className="font-semibold">{isLoading && !data ? "..." : total}</span>
                 </div>
               </div>
             </div>
           </div>
 
- 
-
-          <div className="space-y-4 bg-white p-6">
+          <div className="space-y-4 bg-white p-4 sm:p-6">
             <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px]">
               <input
                 value={query}
@@ -203,23 +201,23 @@ export default function DatabasePage() {
 
             {timeRange === "custom" && (
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-md border border-dashboard-border">
-                  <div className="flex flex-col gap-1">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50 p-3 sm:p-4 rounded-md border border-dashboard-border">
+                  <div className="flex flex-col gap-1 flex-1">
                     <label className="text-xs font-semibold text-dashboard-text">Mulai Tanggal</label>
                     <input 
                       type="date" 
                       value={customStartDate} 
                       onChange={(e) => { setCustomStartDate(e.target.value); setPage(1); }}
-                      className="h-9 rounded-md border border-dashboard-border px-3 text-sm outline-none focus:border-dashboard-primary"
+                      className="h-9 rounded-md border border-dashboard-border px-3 text-sm outline-none focus:border-dashboard-primary bg-white"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-1">
                     <label className="text-xs font-semibold text-dashboard-text">Sampai Tanggal</label>
                     <input 
                       type="date" 
                       value={customEndDate} 
                       onChange={(e) => { setCustomEndDate(e.target.value); setPage(1); }}
-                      className="h-9 rounded-md border border-dashboard-border px-3 text-sm outline-none focus:border-dashboard-primary"
+                      className="h-9 rounded-md border border-dashboard-border px-3 text-sm outline-none focus:border-dashboard-primary bg-white"
                     />
                   </div>
                 </div>
@@ -231,7 +229,7 @@ export default function DatabasePage() {
               </div>
             )}
 
-            <div className="overflow-x-auto rounded-lg border border-dashboard-border">
+            <div className="overflow-x-auto touch-pan-x rounded-lg border border-dashboard-border">
               <table className="min-w-full divide-y divide-dashboard-border bg-white text-left text-sm">
                 <thead className="bg-slate-50 text-slate-500">
                   <tr>

@@ -1,0 +1,41 @@
+[
+    {
+        "topic": "data/psa/O2generatorMGM/7112259165140174065",
+        "_terminalTime": "2026-09-17 16:28:36.813",
+        "_groupName": "datamesin",
+        "Schneider_PLC_OXYGEN_PURITY": "96.3",
+        "Schneider_PLC_MF155_RESULT_VA": "5.37",
+        "Schneider_PLC_MF170_RESULT_VB": "0.00",
+        "Schneider_PLC_MF350_RESULT_O2_TANK": "5.2",
+        "Schneider_PLC_FLOW_METER": "0.0",
+        "Schneider_PLC_FLOWMETER2": "7.7",
+        "Schneider_PLC_TOTAL_FLOW": "3403.64",
+        "Schneider_PLC_MF510_RUNING_TIME": "9336.0"
+    },
+    {
+        "topic": "data/psa/O2generatorMGM/7112259165140174014",
+        "_terminalTime": "2026-09-17 15:57:49.714",
+        "_groupName": "datamesin",
+        "Siemens_S7_200CN_SMART_1_Flow1": "5.13",
+        "Siemens_S7_200CN_SMART_1_Flow2": "-14.99",
+        "Siemens_S7_200CN_SMART_1_AccuF1": "1606.82",
+        "Siemens_S7_200CN_SMART_1_AcuuF2": "0.04",
+        "TOTAL_TOTAL": "1606.85",
+        "Siemens_S7_200CN_SMART_1_O2Purity": "94.86",
+        "Siemens_S7_200CN_SMART_1_O2Tank": "0.53",
+        "Siemens_S7_200CN_SMART_1_RH": "3359.00"
+    },
+    {
+        "topic": "data/psa/O2generatorMGM/7112259165140174001",
+        "_terminalTime": "2026-09-17 15:57:46.378",
+        "_groupName": "datamesin",
+        "Siemens_S7_200CN_SMART_1_VesselA": "0.27",
+        "Siemens_S7_200CN_SMART_1_Vesselb": "0.27",
+        "Siemens_S7_200CN_SMART_1_O2Tank": "0.54",
+        "Siemens_S7_200CN_SMART_1_O2Purity": "94.16",
+        "Siemens_S7_200CN_SMART_1_Flow1": "-0.14",
+        "Siemens_S7_200CN_SMART_1_Flow2": "1.98",
+        "Siemens_S7_200CN_SMART_1_RH": "2682.00",
+        "TOTAL_TOTAL": "1864.22"
+    }
+]

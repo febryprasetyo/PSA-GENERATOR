@@ -49,24 +49,22 @@ export default function LoginPage() {
         <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50 md:flex">
           
           {/* Left Panel - Branding & Illustration */}
-          <div className="relative flex flex-col justify-between bg-gradient-to-br from-slate-50 via-white to-slate-100 p-8 md:w-5/12 lg:p-12 border-b border-slate-100 md:border-b-0 md:border-r">
+          <div className="relative flex flex-col justify-between bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 sm:p-8 md:w-5/12 lg:p-12 border-b border-slate-100 md:border-b-0 md:border-r">
             <div className="relative z-10">
-              <div className="mb-6">
-                <img src={brand.brandLogo} alt={`${brand.brandName} Logo`} className="h-16 w-auto object-contain" />
+              <div className="mb-4 sm:mb-6">
+                <img src={brand.brandLogo} alt={`${brand.brandName} Logo`} className="h-12 sm:h-16 w-auto object-contain" />
               </div>
-              <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 lg:text-4xl">
+              <h1 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 lg:text-4xl">
                 PSA Oxygen<br />
                 <span className={isRedTheme ? "text-red-600" : "text-blue-600"}>Monitoring.</span>
               </h1>
-              <p className="mt-4 text-base leading-relaxed text-slate-600">
+              <p className="mt-3 sm:mt-4 text-sm sm:text-base leading-relaxed text-slate-600">
                 Sistem pemantauan kualitas dan produksi gas medis oksigen PSA {brand.brandName} secara *real-time* untuk keandalan infrastruktur rumah sakit Anda.
               </p>
             </div>
 
-
-            
-            <div className="relative z-10 mt-12 md:mt-0">
-              <div className="space-y-4">
+            <div className="relative z-10 mt-6 md:mt-0">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-3 text-sm font-medium text-slate-700">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600">
                     <div className="h-2 w-2 rounded-full bg-blue-600"></div>
@@ -90,7 +88,7 @@ export default function LoginPage() {
           </div>
 
           {/* Right Panel - Login Form */}
-          <div className="flex flex-col justify-center bg-white p-8 md:w-7/12 lg:p-14">
+          <div className="flex flex-col justify-center bg-white p-6 sm:p-8 md:w-7/12 lg:p-14">
             <div className="mx-auto w-full max-w-sm">
               <div className="mb-8 text-center md:text-left">
                 <h2 className="text-2xl font-bold text-slate-900">Selamat Datang</h2>

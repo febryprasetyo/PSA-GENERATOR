@@ -27,33 +27,33 @@ export function PageHeader({ title, subtitle, showLogout, variant = "default", c
 
   if (variant === "dashboard") {
     return (
-      <header className="mb-6 flex items-center justify-between pb-4 border-b border-dashboard-border">
-        <div>
-          <h1 className="text-2xl font-bold text-dashboard-text tracking-tight">Monitoring PSA Oxygen</h1>
-          <p className="mt-1 text-sm text-dashboard-muted">
-            fleet monitoring mesin PSA gas medis, kapasitas produksi, purity, tekanan dan status operational
+      <header className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-dashboard-border">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-dashboard-text tracking-tight">{title || "Monitoring PSA Oxygen"}</h1>
+          <p className="mt-1 text-xs sm:text-sm text-dashboard-muted leading-relaxed">
+            {subtitle || "fleet monitoring mesin PSA gas medis, kapasitas produksi, purity, tekanan dan status operational"}
           </p>
         </div>
-        {children && <div>{children}</div>}
+        {children && <div className="flex flex-wrap items-center gap-2 shrink-0">{children}</div>}
       </header>
     );
   }
 
   return (
-    <header className="mb-6 flex items-center justify-between rounded-xl bg-[#2A3441] px-6 py-5 text-white shadow-sm">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-1 text-sm text-slate-300">{subtitle}</p>
+    <header className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl bg-[#2A3441] p-4 sm:px-6 sm:py-5 text-white shadow-sm">
+      <div className="min-w-0">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
+        <p className="mt-1 text-xs sm:text-sm text-slate-300">{subtitle}</p>
       </div>
 
-      <div className="flex items-center gap-6">
-        {children && <div>{children}</div>}
-        <div className="flex items-center gap-3 border-l border-slate-600 pl-6">
+      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-6 border-t border-slate-700/60 pt-3 sm:border-t-0 sm:pt-0">
+        {children && <div className="flex items-center gap-2">{children}</div>}
+        <div className="flex items-center gap-3 sm:border-l sm:border-slate-600 sm:pl-6">
           <div className="hidden text-right sm:block">
             <p className="text-xs text-slate-300">Selamat datang,</p>
             <p className="text-sm font-bold capitalize">{user?.username || name}</p>
           </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-500 font-bold text-white ring-2 ring-white/10">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-slate-500 font-bold text-white ring-2 ring-white/10 text-xs sm:text-sm">
             {initials}
           </div>
         </div>
@@ -61,7 +61,7 @@ export function PageHeader({ title, subtitle, showLogout, variant = "default", c
         {showLogout && (
           <button
             onClick={logout}
-            className="ml-2 rounded border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+            className="rounded border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
           >
             Logout
           </button>

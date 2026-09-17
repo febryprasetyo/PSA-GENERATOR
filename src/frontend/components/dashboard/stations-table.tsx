@@ -79,8 +79,8 @@ export function StationsTable({
               Menampilkan {formatNumber(visibleStations.length)} dari {formatNumber(filteredCount)} stasiun. Untuk 100+ mesin, data dibagi halaman agar cepat dibaca dan tetap ringan.
             </p>
           </div>
-          <div className={`grid gap-2 ${showAreaFilter ? "md:grid-cols-[minmax(240px,1.25fr)_repeat(4,minmax(155px,0.75fr))]" : "md:grid-cols-[minmax(240px,1.25fr)_repeat(3,minmax(155px,0.75fr))]"}`}>
-            <div className="relative min-w-0">
+          <div className={`grid gap-2 grid-cols-1 sm:grid-cols-2 ${showAreaFilter ? "md:grid-cols-[minmax(240px,1.25fr)_repeat(4,minmax(155px,0.75fr))]" : "md:grid-cols-[minmax(240px,1.25fr)_repeat(3,minmax(155px,0.75fr))]"}`}>
+            <div className="relative min-w-0 sm:col-span-2 md:col-span-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 value={query}
@@ -115,7 +115,7 @@ export function StationsTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto touch-pan-x">
         <table className="min-w-[1380px] w-full border-collapse">
           <thead className="bg-slate-50">
             <tr className="border-b border-dashboard-border">
@@ -142,27 +142,31 @@ export function StationsTable({
       </div>
 
       <div className="flex flex-col justify-between gap-3 border-t border-dashboard-border px-4 py-3 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-2 text-sm text-dashboard-muted">
-          <ListFilter size={16} />
-          <span>Baris per halaman</span>
+        <div className="flex items-center justify-between sm:justify-start gap-2 text-sm text-dashboard-muted">
+          <div className="flex items-center gap-1.5">
+            <ListFilter size={16} />
+            <span>Baris:</span>
+          </div>
           <select
             value={rowsPerPage}
             onChange={(event) => onRowsPerPageChange(Number(event.target.value))}
-            className="h-9 rounded-md border border-dashboard-border bg-white px-2 text-sm text-dashboard-text"
+            className="h-8 sm:h-9 rounded-md border border-dashboard-border bg-white px-2 text-xs sm:text-sm text-dashboard-text"
           >
             {rowsPerPageOptions.map((option) => (
               <option key={option} value={option}>{option}</option>
             ))}
           </select>
         </div>
-        <div className="flex items-center justify-end gap-2">
-          <span className="text-sm text-dashboard-muted">Halaman {currentPage} dari {pageCount}</span>
-          <button type="button" className="icon-button" onClick={() => onPageChange((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Halaman sebelumnya">
-            <ChevronLeft size={18} />
-          </button>
-          <button type="button" className="icon-button" onClick={() => onPageChange((value) => Math.min(pageCount, value + 1))} disabled={currentPage === pageCount} aria-label="Halaman berikutnya">
-            <ChevronRight size={18} />
-          </button>
+        <div className="flex items-center justify-between sm:justify-end gap-2">
+          <span className="text-xs sm:text-sm text-dashboard-muted">Halaman {currentPage} dari {pageCount}</span>
+          <div className="flex items-center gap-1">
+            <button type="button" className="icon-button" onClick={() => onPageChange((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Halaman sebelumnya">
+              <ChevronLeft size={18} />
+            </button>
+            <button type="button" className="icon-button" onClick={() => onPageChange((value) => Math.min(pageCount, value + 1))} disabled={currentPage === pageCount} aria-label="Halaman berikutnya">
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
