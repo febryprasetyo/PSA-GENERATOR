@@ -1,17 +1,43 @@
+export interface BrandConfig {
+  brandName: string;
+  brandLogo: string;
+  brandIcon: string;
+  brandColor: string;
+  autoRegisterSn: boolean;
+}
+
+function getBrandSetting(key: string): string | undefined {
+  // Dynamic lookup keeps legacy NEXT_PUBLIC_* values runtime-bound on the server.
+  const env = process.env;
+  const legacyName = env.NEXT_PUBLIC_BRAND_NAME;
+  const sameBrand = !env.BRAND_NAME || !legacyName || env.BRAND_NAME.toUpperCase() === legacyName.toUpperCase();
+  return env[key] || (sameBrand ? env[`NEXT_PUBLIC_${key}`] : undefined);
+}
+
 export function getBrandName(): string {
-  return process.env.BRAND_NAME || process.env.NEXT_PUBLIC_BRAND_NAME || "MGM";
+  return getBrandSetting("BRAND_NAME") || "MGM";
 }
 
 export function getBrandLogo(): string {
-  return process.env.BRAND_LOGO || process.env.NEXT_PUBLIC_BRAND_LOGO || "/logo-mgm.png";
+  return getBrandSetting("BRAND_LOGO") || (getBrandName().toUpperCase() === "CMC" ? "/logo-cmc.png" : "/logo-mgm.png");
 }
 
 export function getBrandIcon(): string {
-  return process.env.BRAND_ICON || process.env.NEXT_PUBLIC_BRAND_ICON || "/icon-mgm.png";
+  return getBrandSetting("BRAND_ICON") || (getBrandName().toUpperCase() === "CMC" ? "/icon-cmc.png" : "/icon-mgm.png");
 }
 
 export function getBrandColor(): string {
-  return process.env.BRAND_COLOR || process.env.NEXT_PUBLIC_BRAND_COLOR || "blue";
+  return getBrandSetting("BRAND_COLOR") || (getBrandName().toUpperCase() === "CMC" ? "red" : "blue");
+}
+
+export function getBrandConfig(): BrandConfig {
+  return {
+    brandName: getBrandName(),
+    brandLogo: getBrandLogo(),
+    brandIcon: getBrandIcon(),
+    brandColor: getBrandColor(),
+    autoRegisterSn: isAutoRegisterSn(),
+  };
 }
 
 export function isAutoRegisterSn(): boolean {

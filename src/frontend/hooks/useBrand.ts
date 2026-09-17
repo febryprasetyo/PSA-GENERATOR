@@ -1,47 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, createElement, useContext, type ReactNode } from "react";
+import type { BrandConfig } from "@/shared/config";
 
-export interface BrandConfig {
-  brandName: string;
-  brandLogo: string;
-  brandIcon: string;
-  brandColor: string;
-  autoRegisterSn: boolean;
+export type { BrandConfig } from "@/shared/config";
+
+const BrandContext = createContext<BrandConfig | null>(null);
+
+export function BrandProvider({ config, children }: { config: BrandConfig; children: ReactNode }) {
+  return createElement(BrandContext.Provider, { value: config }, children);
 }
 
-const defaultConfig: BrandConfig = {
-  brandName: "MGM",
-  brandLogo: "/logo-mgm.png",
-  brandIcon: "/icon-mgm.png",
-  brandColor: "blue",
-  autoRegisterSn: true,
-};
-
-export function useBrand() {
-  const [config, setConfig] = useState<BrandConfig>(defaultConfig);
-
-  useEffect(() => {
-    let isMounted = true;
-    fetch("/api/brand-config")
-      .then((res) => res.json())
-      .then((data: Partial<BrandConfig>) => {
-        if (isMounted && data.brandName) {
-          setConfig({
-            brandName: data.brandName || "MGM",
-            brandLogo: data.brandLogo || "/logo-mgm.png",
-            brandIcon: data.brandIcon || "/icon-mgm.png",
-            brandColor: data.brandColor || "blue",
-            autoRegisterSn: data.autoRegisterSn !== false,
-          });
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
+export function useBrand(): BrandConfig {
+  const config = useContext(BrandContext);
+  if (!config) throw new Error("useBrand must be used within BrandProvider");
   return config;
 }

@@ -99,14 +99,38 @@ If the configured CMC database is unavailable, the affected request/message fail
 without registering a duplicate. Without `CMC_DATABASE_URL`, standalone behavior
 is unchanged; cross-brand filtering is disabled.
 
+Each PM2 instance reads its branding at runtime from `.env.mgm` or `.env.cmc`.
+Set `BRAND_NAME`, `BRAND_LOGO`, `BRAND_ICON`, and `BRAND_COLOR` using the examples
+in `.env.example`. Existing `NEXT_PUBLIC_BRAND_*` settings remain supported.
+The shared production build renders each instance's logo, favicon, page title,
+and primary color on the initial response. After changing an instance's environment,
+reload it with `pm2 reload ecosystem.config.js --only psa-cmc-dashboard --update-env`
+(use `psa-mgm-dashboard` for MGM). Source changes require a new build before reload.
+
 The listener keeps realtime latest values on every message and persists retry-safe averages on aligned 10-minute intervals. CSV exports aggregate those records into aligned 30-minute averages.
 
-After pulling a release that introduces Area management, apply the additive schema before starting the application:
+After pulling a release that introduces Area management or vessel telemetry, apply
+the additive upgrade to **each** existing instance before reloading the application:
 
 ```bash
-pnpm run db:push
-pnpm run db:setup-timescale
+pnpm run db:instance .env.mgm pnpm run db:migrate-deployment
+pnpm run db:instance .env.cmc pnpm run db:migrate-deployment
+pm2 reload ecosystem.config.js --update-env
 ```
+
+The upgrade adds Area tables, nullable vessel columns, and the unique index used
+by MQTT historical aggregation. It runs in a transaction, can be repeated, and
+preserves existing readings. `db:instance` requires the selected environment file
+to contain `DATABASE_URL`; it never falls back to the other instance's database.
+For a new database, run `db:instance <env-file> pnpm run db:push` first.
+`deploy.sh deploy` and `deploy.sh update` now apply the upgrade to both instances
+and stop on migration errors before reloading PM2.
+
+If machines appear under Mesin but Dashboard/Database are empty, check the HTTP
+response and PM2 dashboard error log. Missing `area_hospitals`, `vessel_1`, or
+`vessel_2` indicates the instance has not received this upgrade. Registration alone
+does not create telemetry: readings still require incoming MQTT messages for the
+registered serial number and an assigned hospital.
 
 Open [http://localhost:3300](http://localhost:3300) in your browser to view the application.
 

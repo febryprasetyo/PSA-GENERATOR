@@ -120,7 +120,11 @@ export default function ViewerLoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className={`group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl ${
+                    isRedTheme
+                      ? "bg-red-600 hover:bg-red-700 shadow-red-600/20 hover:shadow-red-600/30 focus:ring-red-500/30"
+                      : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20 hover:shadow-blue-600/30 focus:ring-blue-500/30"
+                  } px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all focus:outline-none focus:ring-4 disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
                   {isLoading ? (
                     <Loader2 className="animate-spin" size={18} />

@@ -11,7 +11,7 @@ const config: Config = {
           border: "#E2E8F0",
           text: "#0F172A",
           muted: "#64748B",
-          primary: "#2563EB",
+          primary: "var(--primary)",
           navy: "#1E3A8A",
           online: "#16A34A",
           offline: "#DC2626",

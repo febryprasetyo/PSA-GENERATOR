@@ -20,7 +20,7 @@ export type Station = {
   actualDailyFlow?: number;
   runningTimeHours: number;
   status: MachineStatus;
-  lastUpdate: string;
+  lastUpdate: string | null;
   eventTimestamp?: string;
   region: string;
   areaId?: string | null;

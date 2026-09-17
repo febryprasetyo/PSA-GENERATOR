@@ -17,6 +17,25 @@ check_env() {
   fi
 }
 
+check_instance_envs() {
+  for instance in mgm cmc; do
+    if [ ! -f ".env.$instance" ]; then
+      echo "❌ Missing .env.$instance; configure both production instances before deployment."
+      exit 1
+    fi
+  done
+}
+
+migrate_instances() {
+  for instance in mgm cmc; do
+    echo "🗄️ Migrating $instance database..."
+    if [ "$MODE" = "deploy" ]; then
+      pnpm run db:instance ".env.$instance" pnpm run db:push
+    fi
+    pnpm run db:instance ".env.$instance" pnpm run db:migrate-deployment
+  done
+}
+
 # Record deployment history log
 log_deployment() {
   local mode=$1
@@ -74,7 +93,7 @@ case "$MODE" in
 
   deploy)
     echo "📦 Menjalankan mode INITIAL DEPLOYMENT (Production)..."
-    check_env
+    check_instance_envs
 
     echo "📦 Installing dependencies..."
     pnpm install
@@ -82,8 +101,7 @@ case "$MODE" in
     echo "🏗️ Building Next.js application..."
     pnpm run build
 
-    echo "🗄️ Running database push..."
-    pnpm run db:push || true
+    migrate_instances
 
     echo "🚀 Starting PM2 processes..."
     pm2 start ecosystem.config.js
@@ -97,7 +115,7 @@ case "$MODE" in
 
   update)
     echo "🔄 Menjalankan mode UPDATE (Production)..."
-    check_env
+    check_instance_envs
 
     echo "📥 Pulling latest changes from Git..."
     git pull origin $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
@@ -108,8 +126,10 @@ case "$MODE" in
     echo "🏗️ Building Next.js application..."
     pnpm run build
 
+    migrate_instances
+
     echo "🔄 Reloading PM2 processes..."
-    pm2 reload ecosystem.config.js || pm2 restart ecosystem.config.js
+    pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env
     pm2 save
 
     log_deployment "UPDATE"

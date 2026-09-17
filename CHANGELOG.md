@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.2.1] - 2026-09-17
 
 ### Added
 - Master Area dinamis dengan relasi satu Area ke banyak Rumah Sakit dan satu Area maksimum per Rumah Sakit.
@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ekspor CSV menggunakan rata-rata per 30 menit dan hanya menampilkan SN bila hasil memuat Rumah Sakit multi-mesin.
 
 ### Fixed
+- Dashboard dan Database CMC kembali membaca data setelah migrasi aditif tabel Area, kolom vessel, dan indeks riwayat. Deployment memperbarui skema MGM/CMC secara terpisah dan berhenti jika migrasi gagal.
+- Mesin yang belum pernah mengirim telemetry tetap berstatus offline tanpa waktu pembaruan buatan.
 - Aksi create Rumah Sakit kembali tampil pada header master data dan nama divalidasi setelah trimming.
 - Sinkronisasi dan auto-registrasi MQTT MGM melewati serial yang masih terdaftar aktif di CMC untuk mencegah duplikasi lintas brand.
 - Duplikat CMC berlabel `Auto-Registered` atau `Auto-Synced` yang belum terhubung ke Rumah Sakit disembunyikan dari daftar mesin dan dashboard MGM tanpa menghapus record; mesin yang sudah terhubung atau diberi nama manual tetap ditampilkan.

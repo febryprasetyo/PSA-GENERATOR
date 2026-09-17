@@ -25,3 +25,5 @@ QA_QC_REPORT.md
 CODEX.md
 CODEX_PROMPT.md
 deploy.sh
+docs/
+deployments.log

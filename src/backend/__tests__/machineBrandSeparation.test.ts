@@ -83,4 +83,20 @@ describe("MGM sync and machine list", () => {
     expect(response.status).toBe(500);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
+
+  it("keeps a registered CMC machine offline until its first telemetry heartbeat", async () => {
+    vi.stubEnv("BRAND_NAME", "CMC");
+    selectRows([{
+      id: "CMC-2", serialNumber: "CMC-2", machineName: "CMC-2", clientId: "h2",
+      status: "offline", lastSeenAt: null, dbReceivedAt: null, dbTerminalTime: null,
+      dbOxygenPurity: null, dbTankPressure: null, dbVessel1: null, dbVessel2: null,
+      dbFlowSentral: null, dbFlowBooster: null, dbTotalFlow: null,
+      dbStartOfDayTotalFlow: null, dbRunningTimeHours: null,
+    }]);
+    const response = await dashboard(new Request("http://localhost/api/dashboard"));
+    expect(response.status).toBe(200);
+    expect((await response.json()).machines[0]).toMatchObject({
+      id: "CMC-2", status: "offline", lastUpdate: null, oxygenPurity: null,
+    });
+  });
 });

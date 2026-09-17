@@ -131,7 +131,7 @@ export async function GET(request: Request) {
         }
       }
 
-      const lastUpdateStr = latestData.receivedAt || latestData.updatedAt || m.dbReceivedAt || m.lastSeenAt || new Date().toISOString();
+      const lastUpdateStr = latestData.receivedAt || latestData.updatedAt || m.dbReceivedAt || m.lastSeenAt || null;
       const resolvedStatus = resolveHeartbeatStatus(lastUpdateStr, m.status);
 
       const machineData = {
@@ -159,7 +159,7 @@ export async function GET(request: Request) {
       };
       
       // Preserve the first cumulative flow seen each UTC day as the daily baseline.
-      if (machineData.totalFlow !== null) {
+      if (machineData.totalFlow !== null && lastUpdateStr) {
         const baselineDate = new Date(lastUpdateStr).toISOString().slice(0, 10);
         const baselineKey = getRedisKey(`machine:daily_baseline:${m.serialNumber}:${baselineDate}`);
         await redis.set(baselineKey, String(machineData.totalFlow), "EX", 172800, "NX");

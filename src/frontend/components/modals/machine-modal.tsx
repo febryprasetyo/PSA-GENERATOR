@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/frontend/hooks/useAuth";
+import { useBrand } from "@/frontend/hooks/useBrand";
 import { HospitalSearchSelect } from "@/frontend/components/ui/hospital-search-select";
 
 type MachineForm = {
@@ -22,6 +23,7 @@ interface MachineModalProps {
 }
 
 export function MachineModal({ isOpen, onClose, onSave, machine }: MachineModalProps) {
+  const brand = useBrand();
   const [formData, setFormData] = useState<MachineForm>({
     clientId: "",
     serialNumber: "",
@@ -122,7 +124,7 @@ export function MachineModal({ isOpen, onClose, onSave, machine }: MachineModalP
                 value={formData.serialNumber}
                 onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
                 className="w-full rounded-md border border-dashboard-border px-3 py-2 text-sm outline-none transition focus:border-dashboard-primary focus:ring-1 focus:ring-dashboard-primary disabled:bg-slate-100 disabled:text-slate-500"
-                placeholder="Contoh: MGM-2026-001"
+                placeholder={`Contoh: ${brand.brandName}-2026-001`}
               />
               {isEditing && !isAdmin && <p className="mt-1 text-xs text-dashboard-muted">Hanya Admin yang dapat mengubah Serial Number.</p>}
               {isEditing && isAdmin && <p className="mt-1 text-xs text-amber-500 font-medium">Hati-hati: Mengubah SN dapat memutus histori MQTT.</p>}
@@ -145,7 +147,7 @@ export function MachineModal({ isOpen, onClose, onSave, machine }: MachineModalP
                 value={formData.model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                 className="w-full rounded-md border border-dashboard-border px-3 py-2 text-sm outline-none transition focus:border-dashboard-primary focus:ring-1 focus:ring-dashboard-primary"
-                placeholder="Contoh: MGM-100"
+                placeholder={`Contoh: ${brand.brandName}-100`}
               />
             </div>
 
