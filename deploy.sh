@@ -36,6 +36,14 @@ migrate_instances() {
   done
 }
 
+# Deploy both brands from the shared build, including any missing PM2 processes.
+deploy_instances() {
+  local apps="psa-mgm-dashboard,psa-mgm-mqtt,psa-cmc-dashboard,psa-cmc-mqtt"
+  echo "🔄 Starting/reloading dashboard dan MQTT untuk MGM + CMC..."
+  pm2 startOrReload ecosystem.config.js --only "$apps" --update-env
+  pm2 save
+}
+
 # Record deployment history log
 log_deployment() {
   local mode=$1
@@ -54,8 +62,8 @@ MODE=$1
 if [ -z "$MODE" ]; then
   echo "Pilih mode eksekusi PM2:"
   echo "1) dev     - Jalankan aplikasi dalam mode Development (Next dev & MQTT listener)"
-  echo "2) deploy  - Deploy aplikasi pertama kali untuk Production (Install, Build, DB Push & PM2 Start)"
-  echo "3) update  - Update aplikasi yang sudah terdeploy (Git pull, Install, Build & PM2 Reload)"
+  echo "2) deploy  - Deploy MGM + CMC sekaligus (Install, Build, DB Push & PM2)"
+  echo "3) update  - Update MGM + CMC sekaligus (Git pull, Install, Build & PM2)"
   read -p "Masukkan pilihan (1, 2, atau 3 / dev, deploy, update): " choice
 
   case "$choice" in
@@ -103,12 +111,10 @@ case "$MODE" in
 
     migrate_instances
 
-    echo "🚀 Starting PM2 processes..."
-    pm2 start ecosystem.config.js
-    pm2 save
+    deploy_instances
 
     log_deployment "DEPLOY"
-    echo "✅ PM2 Initial Deployment Selesai!"
+    echo "✅ PM2 Initial Deployment MGM + CMC Selesai!"
     echo "📊 Status PM2:"
     pm2 status
     ;;
@@ -128,12 +134,10 @@ case "$MODE" in
 
     migrate_instances
 
-    echo "🔄 Reloading PM2 processes..."
-    pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env
-    pm2 save
+    deploy_instances
 
     log_deployment "UPDATE"
-    echo "✅ PM2 Update Selesai!"
+    echo "✅ PM2 Update MGM + CMC Selesai!"
     echo "📊 Status PM2:"
     pm2 status
     ;;

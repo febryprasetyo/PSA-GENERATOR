@@ -126,6 +126,21 @@ For a new database, run `db:instance <env-file> pnpm run db:push` first.
 `deploy.sh deploy` and `deploy.sh update` now apply the upgrade to both instances
 and stop on migration errors before reloading PM2.
 
+Deploy or update MGM and CMC together with a single command:
+
+```bash
+bash deploy.sh deploy # Initial deployment of both instances
+bash deploy.sh update # Pull, rebuild, and update both instances
+```
+
+Both modes build once, migrate both databases, then start or reload all four PM2
+processes: `psa-mgm-dashboard`, `psa-mgm-mqtt`, `psa-cmc-dashboard`, and `psa-cmc-mqtt`.
+Missing processes are started automatically, and existing processes receive the
+updated environment from their respective `.env.mgm` and `.env.cmc` files.
+This keeps application code aligned across instances; their databases stay separate.
+Run `node --test scripts/deploy.test.mjs` to check deployment orchestration with
+stubbed Git, pnpm, and PM2 commands, without modifying running services.
+
 If machines appear under Mesin but Dashboard/Database are empty, check the HTTP
 response and PM2 dashboard error log. Missing `area_hospitals`, `vessel_1`, or
 `vessel_2` indicates the instance has not received this upgrade. Registration alone
