@@ -134,7 +134,7 @@ export function Sidebar({ collapsed, setCollapsed, mobileOpen = false, setMobile
       {/* --- DESKTOP DOCKED SIDEBAR (screen >= md) --- */}
       <aside
         className={`relative hidden md:flex flex-col border-r border-dashboard-border bg-white transition-all duration-300 shrink-0 ${
-          collapsed ? "w-[72px]" : "w-64"
+          collapsed ? "w-[72px]" : "w-max"
         }`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between px-4 border-b border-dashboard-border">

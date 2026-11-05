@@ -90,8 +90,7 @@ case "$MODE" in
     pm2 delete psa-dashboard-dev psa-mqtt-dev 2>/dev/null || true
     
     # Jalankan dev server Next.js dan MQTT listener via PM2
-    pm2 start "pnpm dev" --name "psa-dashboard-dev"
-    pm2 start "pnpm run mqtt" --name "psa-mqtt-dev"
+    pm2 startOrReload ecosystem.config.js --only "psa-dashboard-dev,psa-mqtt-dev" --update-env
     pm2 save
 
     echo "✅ Development server berhasil dijalankan di PM2!"

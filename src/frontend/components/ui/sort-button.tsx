@@ -16,7 +16,7 @@ export function SortButton({
     <button
       type="button"
       onClick={() => onSort(column)}
-      className={`inline-flex items-center gap-1 whitespace-nowrap text-left text-xs font-semibold uppercase tracking-[0.06em] ${
+      className={`inline-flex w-full items-center justify-end gap-1 whitespace-normal text-right text-xs font-semibold uppercase tracking-[0.06em] ${
         sortKey === column ? "text-dashboard-primary" : "text-slate-500"
       }`}
     >

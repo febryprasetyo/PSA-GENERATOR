@@ -11,6 +11,6 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
     setupFiles: ['./src/frontend/__tests__/setup.ts'],
-    exclude: [...configDefaults.exclude, '**/.worktrees/**'],
+    exclude: [...configDefaults.exclude, '**/.worktrees/**', 'scripts/**'],
   },
 });

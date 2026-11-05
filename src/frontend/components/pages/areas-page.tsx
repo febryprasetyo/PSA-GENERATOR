@@ -94,11 +94,12 @@ export function AreasPage() {
   }
 
   return <div className="pb-12">
-    <PageHeader title="Master Area" subtitle="Kelola pembagian wilayah dan anggota Rumah Sakit">
-      {isAdmin && <button onClick={() => { setEditing("new"); setName(""); setDescription(""); }} className="inline-flex h-10 items-center gap-2 rounded-md bg-dashboard-primary px-4 text-sm font-semibold text-white"><Plus size={16} />Tambah Area</button>}
-    </PageHeader>
+    <PageHeader title="Master Area" subtitle="Kelola pembagian wilayah dan anggota Rumah Sakit" />
     {error && <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
-    <div className="mt-6 panel overflow-hidden">
+    <div className="panel mt-6 overflow-hidden">
+      {isAdmin && <div className="flex justify-end border-b border-dashboard-border bg-white px-4 py-4 sm:px-6 sm:py-5">
+        <button onClick={() => { setEditing("new"); setName(""); setDescription(""); }} className="inline-flex h-10 items-center gap-2 rounded-md bg-dashboard-primary px-4 text-sm font-semibold text-white"><Plus size={16} />Tambah Area</button>
+      </div>}
       {loading ? <p className="p-8 text-center text-dashboard-muted">Memuat Area...</p> : <div className="divide-y divide-dashboard-border">
         {areas.map((area) => <div key={area.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-3"><div className="rounded-md bg-blue-50 p-3 text-dashboard-primary"><MapPin size={20} /></div><div><h2 className="font-bold">{area.name}</h2><p className="text-sm text-dashboard-muted">{area.description || "Tanpa deskripsi"}</p><p className="mt-1 text-xs text-slate-500">{area.hospitalCount} RS · {area.hospitals.map((item) => item.hospitalName).join(", ") || "Belum ada anggota"}</p></div></div>

@@ -8,6 +8,7 @@ import { Edit2, Trash2, Plus, AlertTriangle, Check, X, RefreshCw, Unplug } from 
 
 import { canShowMachineSync } from "@/frontend/lib/machine-sync";
 import { FeedbackToast, type ToastTone } from "@/frontend/components/ui/feedback-toast";
+import { ConfirmModal } from "@/frontend/components/ui/confirm-modal";
 
 const statusOptions = ["all", "online", "offline", "warning"] as const;
 
@@ -26,6 +27,13 @@ interface MachineData {
   [key: string]: unknown;
 }
 
+type PendingConfirmation = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  action: () => Promise<void>;
+};
+
 export default function DevicesPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const [machines, setMachines] = useState<MachineData[]>([]);
@@ -39,6 +47,8 @@ export default function DevicesPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMachine, setSelectedMachine] = useState<MachineData | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
 
   const fetchMachines = async () => {
@@ -99,53 +109,83 @@ export default function DevicesPage() {
     }
   };
 
-  const handleDelete = async (id: string, isOperator: boolean) => {
-    const msg = isOperator 
-      ? "Ajukan penghapusan mesin ini ke Admin?" 
-      : "Apakah Anda yakin ingin menghapus mesin ini? Histori data akan tetap tersimpan.";
-    if (!confirm(msg)) return;
-
-    try {
-      const res = await fetch(`/api/machines/${id}`, { method: "DELETE" });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Failed to delete machine");
-      fetchMachines();
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err));
-    }
+  const handleDelete = (id: string, isOperator: boolean) => {
+    setPendingConfirmation({
+      title: isOperator ? "Ajukan Penghapusan Mesin?" : "Hapus Mesin?",
+      message: isOperator
+        ? "Penghapusan mesin ini akan diajukan ke Admin untuk persetujuan."
+        : "Mesin akan dihapus, tetapi histori datanya tetap tersimpan.",
+      confirmLabel: isOperator ? "Ajukan Hapus" : "Hapus Mesin",
+      action: async () => {
+        try {
+          const res = await fetch(`/api/machines/${id}`, { method: "DELETE" });
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "Failed to delete machine");
+          fetchMachines();
+        } catch (err: unknown) {
+          setToast({ message: err instanceof Error ? err.message : String(err), tone: "error" });
+        }
+      },
+    });
   };
 
-  const handleApproveDelete = async (id: string) => {
-    if (!confirm("Setujui penghapusan mesin ini?")) return;
-    try {
-      const res = await fetch(`/api/machines/${id}/approve-delete`, { method: "POST" });
-      if (!res.ok) throw new Error("Gagal menyetujui");
-      fetchMachines();
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err));
-    }
+  const handleApproveDelete = (id: string) => {
+    setPendingConfirmation({
+      title: "Setujui Penghapusan?",
+      message: "Pengajuan penghapusan mesin ini akan disetujui.",
+      confirmLabel: "Setujui Hapus",
+      action: async () => {
+        try {
+          const res = await fetch(`/api/machines/${id}/approve-delete`, { method: "POST" });
+          if (!res.ok) throw new Error("Gagal menyetujui");
+          fetchMachines();
+        } catch (err: unknown) {
+          setToast({ message: err instanceof Error ? err.message : String(err), tone: "error" });
+        }
+      },
+    });
   };
 
-  const handleRejectDelete = async (id: string) => {
-    if (!confirm("Tolak pengajuan penghapusan mesin ini?")) return;
-    try {
-      const res = await fetch(`/api/machines/${id}/reject-delete`, { method: "POST" });
-      if (!res.ok) throw new Error("Gagal menolak");
-      fetchMachines();
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err));
-    }
+  const handleRejectDelete = (id: string) => {
+    setPendingConfirmation({
+      title: "Tolak Penghapusan?",
+      message: "Pengajuan penghapusan mesin ini akan ditolak.",
+      confirmLabel: "Tolak Hapus",
+      action: async () => {
+        try {
+          const res = await fetch(`/api/machines/${id}/reject-delete`, { method: "POST" });
+          if (!res.ok) throw new Error("Gagal menolak");
+          fetchMachines();
+        } catch (err: unknown) {
+          setToast({ message: err instanceof Error ? err.message : String(err), tone: "error" });
+        }
+      },
+    });
   };
 
-  const handleUnassign = async (id: string) => {
-    if (!confirm("Yakin ingin menarik mesin ini dari Rumah Sakit (Unassign)? Riwayat data mesin ini di RS lama akan tetap tersimpan di database untuk keperluan pelaporan RS tersebut.")) return;
-    try {
-      const res = await fetch(`/api/machines/${id}/unassign`, { method: "POST" });
-      if (!res.ok) throw new Error("Gagal melakukan unassign mesin");
-      fetchMachines();
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err));
-    }
+  const handleUnassign = (id: string) => {
+    setPendingConfirmation({
+      title: "Tarik Mesin dari Rumah Sakit?",
+      message: "Mesin akan dilepas dari Rumah Sakit ini. Riwayat datanya tetap tersimpan.",
+      confirmLabel: "Tarik Mesin",
+      action: async () => {
+        try {
+          const res = await fetch(`/api/machines/${id}/unassign`, { method: "POST" });
+          if (!res.ok) throw new Error("Gagal melakukan unassign mesin");
+          fetchMachines();
+        } catch (err: unknown) {
+          setToast({ message: err instanceof Error ? err.message : String(err), tone: "error" });
+        }
+      },
+    });
+  };
+
+  const executeConfirmation = async () => {
+    if (!pendingConfirmation) return;
+    setIsConfirming(true);
+    await pendingConfirmation.action();
+    setIsConfirming(false);
+    setPendingConfirmation(null);
   };
 
   const filteredMachines = useMemo(() => {
@@ -381,6 +421,15 @@ export default function DevicesPage() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveMachine}
         machine={selectedMachine || undefined}
+      />
+      <ConfirmModal
+        open={Boolean(pendingConfirmation)}
+        title={pendingConfirmation?.title || "Konfirmasi"}
+        message={pendingConfirmation?.message || ""}
+        confirmLabel={pendingConfirmation?.confirmLabel || "Konfirmasi"}
+        busy={isConfirming}
+        onCancel={() => setPendingConfirmation(null)}
+        onConfirm={() => void executeConfirmation()}
       />
       {toast && <FeedbackToast {...toast} onClose={() => setToast(null)} />}
     </div>

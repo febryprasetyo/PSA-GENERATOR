@@ -240,8 +240,8 @@ export default function DatabasePage() {
                     <th className="px-4 py-3">Flow meter 2</th>
                     <th className="px-4 py-3">Oxygen Purity</th>
                     <th className="px-4 py-3">Oxygen tank</th>
-                    <th className="px-4 py-3">Vessel 1 (MPa)</th>
-                    <th className="px-4 py-3">Vessel 2 (MPa)</th>
+                    <th className="px-4 py-3">Vessel 1</th>
+                    <th className="px-4 py-3">Vessel 2</th>
                     <th className="px-4 py-3">Total Flow</th>
                     <th className="px-4 py-3">Running Time</th>
                     <th className="px-4 py-3">Status</th>
@@ -268,8 +268,8 @@ export default function DatabasePage() {
                       <td className="px-4 py-4 text-dashboard-text">{entry.boosterFlow}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.oxygenPurity}%</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.tankPressure} bar</td>
-                      <td className="px-4 py-4 text-dashboard-text"><NullableMetric value={entry.vessel1 as number | null} suffix="MPa" /></td>
-                      <td className="px-4 py-4 text-dashboard-text"><NullableMetric value={entry.vessel2 as number | null} suffix="MPa" /></td>
+                      <td className="px-4 py-4 text-dashboard-text"><NullableMetric value={entry.vessel1 as number | null} suffix="bar" /></td>
+                      <td className="px-4 py-4 text-dashboard-text"><NullableMetric value={entry.vessel2 as number | null} suffix="bar" /></td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.totalFlow}</td>
                       <td className="px-4 py-4 text-dashboard-text">{entry.runningTime}</td>
                       <td className="px-4 py-4">

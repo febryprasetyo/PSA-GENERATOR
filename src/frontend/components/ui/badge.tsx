@@ -13,9 +13,9 @@ export const statusStyles: Record<MachineStatus, string> = {
   warning: "bg-amber-50 text-dashboard-warning ring-amber-100",
 };
 
-export function Badge({ children, className }: { children: ReactNode; className: string }) {
+export function Badge({ children, className, weight = "semibold" }: { children: ReactNode; className: string; weight?: "normal" | "semibold" }) {
   return (
-    <span className={`inline-flex min-w-20 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${className}`}>
+    <span className={`inline-flex min-w-20 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-xs ${weight === "normal" ? "font-normal" : "font-semibold"} ring-1 ${className}`}>
       {children}
     </span>
   );

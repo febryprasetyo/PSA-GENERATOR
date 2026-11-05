@@ -116,24 +116,28 @@ export function StationsTable({
       </div>
 
       <div className="overflow-x-auto touch-pan-x">
-        <table className="min-w-[1380px] w-full border-collapse">
-          <thead className="bg-slate-50">
+        <table className="min-w-[1380px] w-full table-fixed border-collapse">
+          <colgroup>
+            <col className="w-[280px]" />
+            <col span={11} className="w-[100px]" />
+          </colgroup>
+          <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
             <tr className="border-b border-dashboard-border">
               <th className="px-4 py-3 text-left"><SortButton label="Nama Rumah Sakit" column="hospitalName" sortKey={sortKey} onSort={onSort} /></th>
-              <th className="px-4 py-3 text-right"><SortButton label="MC/day (Nm³)" column="capacityMcDay" sortKey={sortKey} onSort={onSort} /></th>
-              <th className="px-4 py-3 text-right">MC/bulan (Nm³)</th>
-              <th className="px-4 py-3 text-right">Flow Meter 1 (Nm³/h)</th>
-              <th className="px-4 py-3 text-right">Flow Meter 2 (Nm³/h)</th>
-              <th className="px-4 py-3 text-right"><SortButton label="Total Flow (Nm³/h)" column="totalFlow" sortKey={sortKey} onSort={onSort} /></th>
-              <th className="px-4 py-3 text-right"><SortButton label="Oxygen Purity" column="oxygenPurity" sortKey={sortKey} onSort={onSort} /></th>
-              <th className="px-4 py-3 text-right"><SortButton label="Tekanan O2 tank" column="tankPressure" sortKey={sortKey} onSort={onSort} /></th>
-              <th className="px-4 py-3 text-right">Vessel 1 (MPa)</th>
-              <th className="px-4 py-3 text-right">Vessel 2 (MPa)</th>
-              <th className="px-4 py-3 text-center"><SortButton label="Status" column="status" sortKey={sortKey} onSort={onSort} /></th>
-              <th className="px-4 py-3 text-center"><SortButton label="Health" column="healthScore" sortKey={sortKey} onSort={onSort} /></th>
+              <th className="px-2 py-3 text-right"><SortButton label="MC/day (Nm³)" column="capacityMcDay" sortKey={sortKey} onSort={onSort} /></th>
+              <th className="px-2 py-3 text-right">MC/bulan (Nm³)</th>
+              <th className="px-2 py-3 text-right">Flow Meter 1 (Nm³/h)</th>
+              <th className="px-2 py-3 text-right">Flow Meter 2 (Nm³/h)</th>
+              <th className="px-2 py-3 text-right"><SortButton label="Total Flow (Nm³/h)" column="totalFlow" sortKey={sortKey} onSort={onSort} /></th>
+              <th className="px-2 py-3 text-right"><SortButton label="Oxygen Purity" column="oxygenPurity" sortKey={sortKey} onSort={onSort} /></th>
+              <th className="px-2 py-3 text-right"><SortButton label="Tekanan O2 tank" column="tankPressure" sortKey={sortKey} onSort={onSort} /></th>
+              <th className="px-2 py-3 text-right">Vessel 1</th>
+              <th className="px-2 py-3 text-right">Vessel 2</th>
+              <th className="px-2 py-3 text-right"><SortButton label="Status" column="status" sortKey={sortKey} onSort={onSort} /></th>
+              <th className="px-2 py-3 text-right"><SortButton label="Health" column="healthScore" sortKey={sortKey} onSort={onSort} /></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="font-normal">
             {visibleStations.map((station) => (
               <StationRow key={station.id} station={station} showArea={showAreaFilter} />
             ))}
@@ -204,28 +208,28 @@ function StationRow({ station, showArea }: { station: StationWithMetrics; showAr
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 text-right text-sm font-semibold text-dashboard-text">{formatNumber(station.capacityMcDay || 0)}</td>
-      <td className="px-4 py-4 text-right text-sm font-semibold text-dashboard-text">{formatNumber(station.capacityMcMonth || 0)}</td>
-      <td className="px-4 py-4 text-right text-sm text-slate-700">
+      <td className="px-2 py-4 text-right text-sm font-normal text-dashboard-text">{formatNumber(station.capacityMcDay || 0)}</td>
+      <td className="px-2 py-4 text-right text-sm font-normal text-dashboard-text">{formatNumber(station.capacityMcMonth || 0)}</td>
+      <td className="px-2 py-4 text-right text-sm text-slate-700">
         <span className="inline-flex items-center justify-end gap-1"><Activity size={14} className="text-dashboard-central" />{formatNumber(station.centralFlow, 1)}</span>
       </td>
-      <td className="px-4 py-4 text-right text-sm text-slate-700">
+      <td className="px-2 py-4 text-right text-sm text-slate-700">
         <span className="inline-flex items-center justify-end gap-1"><Zap size={14} className="text-dashboard-booster" />{formatNumber(station.boosterFlow, 1)}</span>
       </td>
-      <td className="px-4 py-4 text-right text-sm font-semibold text-dashboard-primary">{formatNumber(station.totalFlow, 1)}</td>
-      <td className="px-4 py-4 text-right">
-        <Badge className={station.purityLevel === "normal" ? levelStyles.normal : "border-amber-200 bg-amber-50 text-amber-700"}>{station.oxygenPurity}%</Badge>
+      <td className="px-2 py-4 text-right text-sm font-normal text-dashboard-primary">{formatNumber(station.totalFlow, 1)}</td>
+      <td className="px-2 py-4 text-right">
+        <Badge weight="normal" className={station.purityLevel === "normal" ? levelStyles.normal : "border-amber-200 bg-amber-50 text-amber-700"}>{station.oxygenPurity}%</Badge>
       </td>
-      <td className="px-4 py-4 text-right">
-        <Badge className={levelStyles[station.pressureLevel]}>{station.tankPressure} bar</Badge>
+      <td className="px-2 py-4 text-right">
+        <Badge weight="normal" className={levelStyles[station.pressureLevel]}>{station.tankPressure} bar</Badge>
       </td>
-      <td className="px-4 py-4 text-right text-sm text-slate-700"><NullableMetric value={station.vessel1} suffix="MPa" /></td>
-      <td className="px-4 py-4 text-right text-sm text-slate-700"><NullableMetric value={station.vessel2} suffix="MPa" /></td>
-      <td className="px-4 py-4 text-center">
-        <Badge className={statusStyles[station.status]}><StatusIcon size={13} />{statusLabel(station.status)}</Badge>
+      <td className="px-2 py-4 text-right text-sm text-slate-700"><NullableMetric value={station.vessel1} suffix="bar" /></td>
+      <td className="px-2 py-4 text-right text-sm text-slate-700"><NullableMetric value={station.vessel2} suffix="bar" /></td>
+      <td className="px-2 py-4 text-right">
+        <Badge weight="normal" className={statusStyles[station.status]}><StatusIcon size={13} />{statusLabel(station.status)}</Badge>
       </td>
-      <td className="px-4 py-4 text-center">
-        <Badge className={levelStyles[station.healthLevel]}>{station.healthScore}/100</Badge>
+      <td className="px-2 py-4 text-right">
+        <Badge weight="normal" className={levelStyles[station.healthLevel]}>{station.healthScore}/100</Badge>
       </td>
     </tr>
   );

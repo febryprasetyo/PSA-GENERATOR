@@ -42,9 +42,9 @@ describe("Vessel export preview", () => {
     await userEvent.click(await screen.findByRole("button", { name: /Tampilkan Pratinjau Data/i }));
 
     const table = await screen.findByRole("table");
-    await waitFor(() => expect(within(table).getByText("0.00 MPa")).toBeInTheDocument());
-    expect(within(table).getByText("Vessel 1 (MPa)")).toBeInTheDocument();
-    expect(within(table).getByText("Vessel 2 (MPa)")).toBeInTheDocument();
+    await waitFor(() => expect(within(table).getByText("0.00 bar")).toBeInTheDocument());
+    expect(within(table).getByText("Vessel 1")).toBeInTheDocument();
+    expect(within(table).getByText("Vessel 2")).toBeInTheDocument();
     expect(within(table).getByText("-")).toBeInTheDocument();
   });
 });

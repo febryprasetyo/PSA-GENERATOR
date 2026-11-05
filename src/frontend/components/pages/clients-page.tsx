@@ -6,6 +6,8 @@ import { PageHeader } from "@/frontend/components/layout/page-header";
 import { ClientModal } from "@/frontend/components/modals/client-modal";
 import { useAuth } from "@/frontend/hooks/useAuth";
 import { useDebounce } from "@/frontend/hooks/useDebounce";
+import { ConfirmModal } from "@/frontend/components/ui/confirm-modal";
+import { FeedbackToast, type ToastTone } from "@/frontend/components/ui/feedback-toast";
 
 type Client = {
   id: string;
@@ -22,6 +24,9 @@ export function ClientsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; tone: ToastTone } | null>(null);
   
   // Pagination & Search & Sort state
   const [page, setPage] = useState(1);
@@ -98,21 +103,24 @@ export function ClientsPage() {
     setIsModalOpen(false);
   }
 
-  async function handleDeleteClient(id: string) {
-    if (!confirm("Apakah Anda yakin ingin menghapus Rumah Sakit ini? Data tidak dapat dipulihkan jika sudah terhapus.")) return;
-
+  async function handleDeleteClient() {
+    if (!clientToDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`/api/clients/${id}`, {
+      const res = await fetch(`/api/clients/${clientToDelete.id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Gagal menghapus client");
+        setToast({ message: data.error || "Gagal menghapus client", tone: "error" });
         return;
       }
+      setClientToDelete(null);
       fetchClients();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Terjadi kesalahan");
+      setToast({ message: err instanceof Error ? err.message : "Terjadi kesalahan", tone: "error" });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -137,37 +145,40 @@ export function ClientsPage() {
 
   return (
     <div className="pb-12">
-      <PageHeader title="Master Data Rumah Sakit" subtitle="Kelola daftar klien rumah sakit (Master Client)">
-        {canManage && (
-          <button
-            onClick={openCreateModal}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-dashboard-primary px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
-            <Plus size={16} />
-            Tambah Rumah Sakit
-          </button>
-        )}
-      </PageHeader>
+      <PageHeader title="Master Data Rumah Sakit" subtitle="Kelola daftar klien rumah sakit (Master Client)" />
 
-      <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="relative w-full sm:w-72">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <Search className="h-4 w-4 text-slate-400" />
+      <div className="panel mt-6 overflow-hidden">
+        <div className="border-b border-dashboard-border bg-white px-4 py-4 sm:px-6 sm:py-5">
+          <div className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-72">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full rounded-md border border-dashboard-border bg-white py-2 pl-10 pr-3 text-sm placeholder-slate-400 focus:border-dashboard-primary focus:outline-none focus:ring-1 focus:ring-dashboard-primary"
+                placeholder="Cari rumah sakit, provinsi, kota..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+              <div className="text-sm text-dashboard-muted">
+                Total: <span className="font-semibold text-dashboard-text">{totalRecords}</span> Data
+              </div>
+              {canManage && (
+                <button
+                  onClick={openCreateModal}
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-dashboard-primary px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                >
+                  <Plus size={16} />
+                  Tambah Rumah Sakit
+                </button>
+              )}
+            </div>
           </div>
-          <input
-            type="text"
-            className="block w-full rounded-md border border-dashboard-border bg-white py-2 pl-10 pr-3 text-sm placeholder-slate-400 focus:border-dashboard-primary focus:outline-none focus:ring-1 focus:ring-dashboard-primary"
-            placeholder="Cari rumah sakit, provinsi, kota..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
         </div>
-        <div className="text-sm text-dashboard-muted">
-          Total: <span className="font-semibold text-dashboard-text">{totalRecords}</span> Data
-        </div>
-      </div>
 
-      <div className="mt-4 panel overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse">
             <thead className="bg-slate-50 text-left text-xs font-semibold text-dashboard-muted">
@@ -230,7 +241,7 @@ export function ClientsPage() {
                           </button>
                           {isAdmin && (
                             <button
-                              onClick={() => handleDeleteClient(client.id)}
+                              onClick={() => setClientToDelete(client)}
                               className="rounded p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                               title="Hapus Rumah Sakit"
                             >
@@ -278,6 +289,16 @@ export function ClientsPage() {
         onSave={handleSaveClient}
         client={selectedClient}
       />
+      <ConfirmModal
+        open={Boolean(clientToDelete)}
+        title="Hapus Rumah Sakit?"
+        message={`Data ${clientToDelete?.hospitalName || "Rumah Sakit ini"} tidak dapat dipulihkan setelah dihapus.`}
+        confirmLabel="Hapus Rumah Sakit"
+        busy={isDeleting}
+        onCancel={() => setClientToDelete(null)}
+        onConfirm={() => void handleDeleteClient()}
+      />
+      {toast && <FeedbackToast {...toast} onClose={() => setToast(null)} />}
     </div>
   );
 }

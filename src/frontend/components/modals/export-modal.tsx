@@ -412,8 +412,8 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
                         <th className="px-3 py-2">Waktu</th>
                         <th className="px-3 py-2">O2 Purity</th>
                         <th className="px-3 py-2">Tank Press</th>
-                        <th className="px-3 py-2">Vessel 1 (MPa)</th>
-                        <th className="px-3 py-2">Vessel 2 (MPa)</th>
+                        <th className="px-3 py-2">Vessel 1</th>
+                        <th className="px-3 py-2">Vessel 2</th>
                         <th className="px-3 py-2">Flow Sentral</th>
                         <th className="px-3 py-2">Total Flow</th>
                       </tr>
@@ -425,8 +425,8 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
                           <td className="px-3 py-2 text-dashboard-muted">{entry.timestamp}</td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.oxygenPurity}%</td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.tankPressure} bar</td>
-                          <td className="px-3 py-2 text-dashboard-text"><NullableMetric value={entry.vessel1} suffix="MPa" /></td>
-                          <td className="px-3 py-2 text-dashboard-text"><NullableMetric value={entry.vessel2} suffix="MPa" /></td>
+                          <td className="px-3 py-2 text-dashboard-text"><NullableMetric value={entry.vessel1} suffix="bar" /></td>
+                          <td className="px-3 py-2 text-dashboard-text"><NullableMetric value={entry.vessel2} suffix="bar" /></td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.centralFlow} L/min</td>
                           <td className="px-3 py-2 text-dashboard-text">{entry.totalFlow}</td>
                         </tr>

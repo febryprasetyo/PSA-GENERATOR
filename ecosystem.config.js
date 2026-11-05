@@ -12,6 +12,7 @@ function loadEnvFile(file) {
 
 const envMgm = loadEnvFile(".env.mgm");
 const envCmc = loadEnvFile(".env.cmc");
+const envDev = loadEnvFile(".env");
 
 module.exports = {
   apps: [
@@ -73,6 +74,38 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         ...envCmc,
+      },
+      log_date_format: "YYYY-MM-DD HH:mm Z",
+      autorestart: true,
+      max_memory_restart: "800M",
+      exp_backoff_restart_delay: 100,
+      kill_timeout: 5000,
+    },
+
+    // --- DEV INSTANCE ---
+    {
+      name: "psa-dashboard-dev",
+      cwd: __dirname,
+      script: "node_modules/next/dist/bin/next",
+      args: "dev --turbopack -p 3302",
+      env: {
+        NODE_ENV: "development",
+        PORT: 3302,
+        ...envDev,
+      },
+      log_date_format: "YYYY-MM-DD HH:mm Z",
+      autorestart: true,
+      max_memory_restart: "1G",
+      exp_backoff_restart_delay: 100,
+    },
+    {
+      name: "psa-mqtt-dev",
+      cwd: __dirname,
+      script: "node_modules/tsx/dist/cli.mjs",
+      args: "src/backend/mqtt/listener.ts",
+      env: {
+        NODE_ENV: "development",
+        ...envDev,
       },
       log_date_format: "YYYY-MM-DD HH:mm Z",
       autorestart: true,

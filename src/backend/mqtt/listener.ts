@@ -1,6 +1,4 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
+import "dotenv/config";
 import mqtt from "mqtt";
 import { db } from "../db";
 import { machines, machineReadings, machineLatestReadings, masterHospitals } from "../db/schema";

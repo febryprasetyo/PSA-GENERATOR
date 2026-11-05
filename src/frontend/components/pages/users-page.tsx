@@ -7,6 +7,7 @@ import { useAuth } from "@/frontend/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { Edit2, Trash2, Plus, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/frontend/components/layout/page-header";
+import { ConfirmModal } from "@/frontend/components/ui/confirm-modal";
 
 const roleOptions = ["all", "admin", "operator", "client"] as const;
 const statusOptions = ["all", "active", "inactive"] as const;
@@ -26,6 +27,8 @@ export default function UsersPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -75,16 +78,19 @@ export default function UsersPage() {
     fetchUsers();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus user ini secara permanen?")) return;
-
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/users/${userToDelete.id}`, { method: "DELETE" });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Failed to delete user");
+      setUserToDelete(null);
       fetchUsers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Terjadi kesalahan");
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -275,7 +281,7 @@ export default function UsersPage() {
                                 <Edit2 className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => handleDelete(u.id)}
+                                onClick={() => setUserToDelete(u)}
                                 disabled={currentUser?.id === u.id}
                                 className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
                                 title={currentUser?.id === u.id ? "Tidak bisa menghapus akun sendiri" : "Hapus User"}
@@ -298,6 +304,15 @@ export default function UsersPage() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveUser}
         user={selectedUser}
+      />
+      <ConfirmModal
+        open={Boolean(userToDelete)}
+        title="Hapus User?"
+        message={`User ${userToDelete?.name || "ini"} akan dihapus secara permanen.`}
+        confirmLabel="Hapus User"
+        busy={isDeleting}
+        onCancel={() => setUserToDelete(null)}
+        onConfirm={() => void handleDelete()}
       />
     </div>
   );
